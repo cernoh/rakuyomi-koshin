@@ -2822,7 +2822,58 @@ impl Database {
 
         Ok(mangas)
     }
+
+    pub async fn find_manga_tracker_ids(
+        &self,
+        manga_id: &MangaId,
+    ) -> Result<Option<MangaTrackerIds>> {
+        let source_id = manga_id.source_id().value();
+        let manga_id = manga_id.value();
+
+        let maybe_row = sqlx::query_as!(
+            MangaTrackerIdsRow,
+            r#"
+                SELECT source_id, manga_id, anilist_id, mangadex_id
+                FROM manga_tracker_ids
+                WHERE source_id = ?1 AND manga_id = ?2;
+            "#,
+            source_id,
+            manga_id,
+        )
+        .fetch_optional(&self.pool)
+        .await?;
+
+        Ok(maybe_row.map(|row| row.into()))
+    }
+
+    pub async fn upsert_manga_tracker_ids(
+        &self,
+        manga_id: &MangaId,
+        ids: MangaTrackerIds,
+    ) -> Result<()> {
+        let source_id = manga_id.source_id().value();
+        let manga_id = manga_id.value();
+
+        sqlx::query!(
+            r#"
+                INSERT INTO manga_tracker_ids (source_id, manga_id, anilist_id, mangadex_id)
+                VALUES (?1, ?2, ?3, ?4)
+                ON CONFLICT DO UPDATE SET
+                    anilist_id = excluded.anilist_id,
+                    mangadex_id = excluded.mangadex_id
+            "#,
+            source_id,
+            manga_id,
+            ids.anilist_id,
+            ids.mangadex_id,
+        )
+        .execute(&self.pool)
+        .await?;
+
+        Ok(())
+    }
 }
+
 
 /// Represents a manga entry in the user's library, joined with its information
 /// and the computed number of unread chapters.
@@ -3087,6 +3138,30 @@ impl From<NotificationInformationRow> for NotificationInformation {
             chapter_title: value.chapter_title.unwrap_or("Unknown".to_owned()),
             chapter_number: value.chapter_number.unwrap_or(-1.0),
             created_at: value.created_at,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct MangaTrackerIds {
+    pub anilist_id: Option<i64>,
+    pub mangadex_id: Option<String>,
+}
+
+#[derive(sqlx::FromRow)]
+#[allow(dead_code)]
+struct MangaTrackerIdsRow {
+    source_id: String,
+    manga_id: String,
+    anilist_id: Option<i64>,
+    mangadex_id: Option<String>,
+}
+
+impl From<MangaTrackerIdsRow> for MangaTrackerIds {
+    fn from(value: MangaTrackerIdsRow) -> Self {
+        Self {
+            anilist_id: value.anilist_id,
+            mangadex_id: value.mangadex_id,
         }
     }
 }

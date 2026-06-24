@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "\n                SELECT chapter_id\n                FROM chapter_informations\n                WHERE source_id = ?1 AND manga_id = ?2\n            ",
+  "describe": {
+    "columns": [
+      {
+        "name": "chapter_id",
+        "ordinal": 0,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "3269befde5a9fe70916dc9b19e74ee3be5ed4c7053c511c273e01b0031e39099"
+}

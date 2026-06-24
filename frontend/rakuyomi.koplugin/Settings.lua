@@ -239,6 +239,40 @@ Settings.setting_value_definitions = {
   },
   {
     nil,
+    { type = 'divider', title = _("Trackers") }
+  },
+  {
+    'sync_to_anilist',
+    {
+      type = 'boolean',
+      title = _("Sync read progress to AniList"),
+    }
+  },
+  {
+    'sync_to_mangadex',
+    {
+      type = 'boolean',
+      title = _("Sync read progress to MangaDex"),
+    }
+  },
+  {
+    'anilist_token',
+    {
+      type = 'string',
+      title = _("AniList API Token"),
+      placeholder = 'Enter your AniList access token',
+    }
+  },
+  {
+    'mangadex_token',
+    {
+      type = 'string',
+      title = _("MangaDex API Token"),
+      placeholder = 'Enter your MangaDex access token',
+    }
+  },
+  {
+    nil,
     { type = 'divider', title = _("System") }
   },
   {

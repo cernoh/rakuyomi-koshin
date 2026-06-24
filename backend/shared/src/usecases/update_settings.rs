@@ -39,6 +39,14 @@ pub struct UpdateableSettings {
     optimize_image: bool,
     library_view_mode: LibraryViewMode,
     search_view_mode: SearchViewMode,
+    #[serde(default)]
+    sync_to_anilist: bool,
+    #[serde(default)]
+    sync_to_mangadex: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    anilist_token: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    mangadex_token: Option<String>,
 }
 
 impl UpdateableSettings {
@@ -56,6 +64,10 @@ impl UpdateableSettings {
         settings.optimize_image = self.optimize_image;
         settings.library_view_mode = self.library_view_mode;
         settings.search_view_mode = self.search_view_mode;
+        settings.sync_to_anilist = self.sync_to_anilist;
+        settings.sync_to_mangadex = self.sync_to_mangadex;
+        settings.anilist_token = self.anilist_token;
+        settings.mangadex_token = self.mangadex_token;
     }
 }
 
@@ -76,6 +88,10 @@ impl From<&Settings> for UpdateableSettings {
             optimize_image: value.optimize_image,
             library_view_mode: value.library_view_mode,
             search_view_mode: value.search_view_mode,
+            sync_to_anilist: value.sync_to_anilist,
+            sync_to_mangadex: value.sync_to_mangadex,
+            anilist_token: value.anilist_token.clone(),
+            mangadex_token: value.mangadex_token.clone(),
         }
     }
 }

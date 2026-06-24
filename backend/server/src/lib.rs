@@ -23,6 +23,7 @@ pub mod settings;
 pub mod source;
 pub mod source_extractor;
 pub mod state;
+pub mod trackers;
 pub mod update;
 
 mod app;

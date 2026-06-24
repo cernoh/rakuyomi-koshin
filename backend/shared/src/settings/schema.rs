@@ -121,6 +121,18 @@ pub struct Settings {
     #[serde(default)]
     pub optimize_image: bool,
 
+    /// AniList API token for syncing read progress.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub anilist_token: Option<String>,
+    /// MangaDex API token for syncing read progress.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub mangadex_token: Option<String>,
+    /// Enable syncing read progress to AniList.
+    #[serde(default = "default_false")]
+    pub sync_to_anilist: bool,
+    /// Enable syncing read progress to MangaDex.
+    #[serde(default = "default_false")]
+    pub sync_to_mangadex: bool,
     #[serde(default)]
     pub library_view_mode: LibraryViewMode,
 

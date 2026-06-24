@@ -14,6 +14,7 @@ use crate::model::{Chapter, Manga};
 use crate::source_extractor::SourceExtractor;
 use crate::state::State;
 use crate::AppError;
+use crate::trackers;
 
 fn path_to_file_url(path: &std::path::Path) -> Option<url::Url> {
     match url::Url::from_file_path(&path) {
@@ -652,15 +653,59 @@ struct MarkChapterAsReadBody {
     state: Option<bool>,
 }
 async fn mark_chapter_as_read(
-    StateExtractor(State { database, .. }): StateExtractor<State>,
+    StateExtractor(State {
+        database,
+        settings,
+        ..
+    }): StateExtractor<State>,
     SourceExtractor(_source): SourceExtractor,
     Path(params): Path<DownloadMangaChapterParams>,
     Json(MarkChapterAsReadBody { state }): Json<MarkChapterAsReadBody>,
 ) -> Result<Json<()>, AppError> {
     let chapter_id = ChapterId::from(params);
-    let database = database.lock().await;
+    let db = database.clone();
 
-    usecases::mark_chapter_as_read(&database, &chapter_id, state).await?;
+    let (chapter_info, manga_info) = {
+        let db_lock = db.lock().await;
+        usecases::mark_chapter_as_read(&db_lock, &chapter_id, state).await?;
+
+        let ch_info = db_lock
+            .find_cached_chapter_information(&chapter_id)
+            .await
+            .ok()
+            .flatten();
+        let mi_info = db_lock
+            .find_cached_manga_information(chapter_id.manga_id())
+            .await
+            .ok()
+            .flatten();
+        (ch_info, mi_info)
+    };
+
+    // Trigger sync to external trackers when marking as read
+    if state.unwrap_or(true) {
+        if let (Some(ch), Some(mi)) = (chapter_info, manga_info) {
+            let settings_lock = settings.lock().await;
+            if settings_lock.sync_to_anilist || settings_lock.sync_to_mangadex {
+                let source_id = chapter_id.source_id().value().clone();
+                let manga_title = mi.title.unwrap_or_default();
+                let chapter = ch;
+                let settings_clone = settings_lock.clone();
+
+                tokio::spawn(async move {
+                    let db_guard = db.lock().await;
+                    trackers::sync_read_progress(
+                        &*db_guard,
+                        &settings_clone,
+                        &chapter,
+                        &source_id,
+                        &manga_title,
+                    )
+                    .await;
+                });
+            }
+        }
+    }
 
     Ok(Json(()))
 }

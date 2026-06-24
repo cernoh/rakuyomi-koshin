@@ -1,0 +1,92 @@
+{
+  "db_name": "SQLite",
+  "query": "\n            SELECT \n                ci.source_id,\n                ci.manga_id,\n                ci.chapter_id,\n                ci.title,\n                ci.scanlator,\n                ci.chapter_number,\n                ci.volume_number,\n                ci.last_updated,\n                ci.thumbnail,\n                ci.lang,\n                ci.locked AS \"locked: bool\",\n                cs.read AS \"read?: bool\",\n                cs.last_read AS \"last_read?: i64\"\n            FROM chapter_informations ci\n            LEFT JOIN chapter_state cs\n                ON ci.source_id = cs.source_id\n                AND ci.manga_id = cs.manga_id\n                AND ci.chapter_id = cs.chapter_id\n            WHERE ci.source_id = ?1 AND ci.manga_id = ?2\n            GROUP BY ci.source_id, ci.manga_id, ci.chapter_id\n            ORDER BY ci.manga_order ASC;\n            ",
+  "describe": {
+    "columns": [
+      {
+        "name": "source_id",
+        "ordinal": 0,
+        "type_info": "Text"
+      },
+      {
+        "name": "manga_id",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "chapter_id",
+        "ordinal": 2,
+        "type_info": "Text"
+      },
+      {
+        "name": "title",
+        "ordinal": 3,
+        "type_info": "Text"
+      },
+      {
+        "name": "scanlator",
+        "ordinal": 4,
+        "type_info": "Text"
+      },
+      {
+        "name": "chapter_number",
+        "ordinal": 5,
+        "type_info": "Float"
+      },
+      {
+        "name": "volume_number",
+        "ordinal": 6,
+        "type_info": "Float"
+      },
+      {
+        "name": "last_updated",
+        "ordinal": 7,
+        "type_info": "Integer"
+      },
+      {
+        "name": "thumbnail",
+        "ordinal": 8,
+        "type_info": "Text"
+      },
+      {
+        "name": "lang",
+        "ordinal": 9,
+        "type_info": "Text"
+      },
+      {
+        "name": "locked: bool",
+        "ordinal": 10,
+        "type_info": "Integer"
+      },
+      {
+        "name": "read?: bool",
+        "ordinal": 11,
+        "type_info": "Integer"
+      },
+      {
+        "name": "last_read?: i64",
+        "ordinal": 12,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "9bd473d5480d59f951b2a38af2734c2335117e58b9fb512284730b486e1e4b6e"
+}

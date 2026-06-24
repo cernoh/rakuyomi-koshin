@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "\n                INSERT INTO manga_tracker_ids (source_id, manga_id, anilist_id, mangadex_id)\n                VALUES (?1, ?2, ?3, ?4)\n                ON CONFLICT DO UPDATE SET\n                    anilist_id = excluded.anilist_id,\n                    mangadex_id = excluded.mangadex_id\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 4
+    },
+    "nullable": []
+  },
+  "hash": "9525c91d6609efc253b5e956d4b63c2cca9743f0c9109f730476976354620379"
+}
