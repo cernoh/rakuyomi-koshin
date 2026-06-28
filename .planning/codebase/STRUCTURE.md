@@ -52,8 +52,7 @@ rakuyomi-koshin/
 - **Contains:** Workspace config, build system, development environment, CI/CD configuration
 - **Key files:**
   - `README.md` — Project overview, installation links, feature highlights
-  - `flake.nix` — Nix flake for development shell and cross-compilation targets
-  - `devenv.nix` — Direnv/devenv development environment config
+  - `flake.nix` — Nix flake for dev shell (devShells.default) and cross-compilation packages
   - `rust-toolchain.toml` — Rust 1.95.0 with clippy, rust-analyzer
   - `.releaserc.yaml` — semantic-release configuration
   - `package.json` — Node.js semantic-release dependencies

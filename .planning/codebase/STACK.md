@@ -10,7 +10,7 @@
 | LuaJIT | 5.1 (KOReader runtime) | Plugin frontend, UI, jobs, widgets |
 | Python | 3.11+ | E2E tests (Playwright) |
 | JavaScript | ES2020 (via boa_engine 0.21) | JS-based Aidoku source WASM files |
-| Nix | Flake-based | Reproducible dev shell (devenv) |
+| Nix | Flake-based | Reproducible dev shell via flake devShell |
 | Shell (bash) | POSIX | Build scripts, CI scripts |
 
 ## Key Frameworks & Libraries
@@ -64,7 +64,7 @@
 - **Lua linting:** `luacheck` — Lua static analysis, run via GitHub Actions
 - **Rust tooling:** rustfmt, clippy — formatting and linting
 - **Profiling:** criterion 0.5 + pprof 0.15 — async benchmarks for chapter downloader and search
-- **Debugging:** `cargo-debugger` (custom build) — Rust debugging utility in devenv
+- **Debugging:** `cargo-debugger` (custom build) — Rust debugging utility, available in dev shell
 
 ## Build System
 
@@ -96,10 +96,10 @@ codegen-units = 1
 panic = "abort"
 ```
 
-**Nix dev shell (`devenv.nix`):**
-- Languages: Rust (via rust-overlay)
-- Packages: koreader, mold-wrapped (Linux), Lua 5.1, luacheck, cargo-debugger, gettext
-- Post-enter hook: `cargo fetch --manifest-path="$DEVENV_ROOT/backend/Cargo.toml"`
+**Nix dev shell (`flake.nix` `devShells.default`):**
+- Languages: Rust 1.95.0 (via rust-overlay)
+- Packages: koreader, mold-wrapped (Linux), Lua 5.1, luacheck, cargo-debugger, gettext, busted, lua-language-server, mdbook
+- Post-enter hook: `cargo fetch --manifest-path="$PWD/backend/Cargo.toml"`
 - Cachix integration for binary caching
 
 **CI build flow (`.github/workflows/build.yml`):**

@@ -4,9 +4,6 @@
 build
 **/.envrc
 **/.luarc.json
-# Devenv
-.devenv*
-devenv.local.nix
 
 # direnv
 .direnv

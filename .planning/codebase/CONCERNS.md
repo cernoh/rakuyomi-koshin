@@ -165,10 +165,10 @@
 - **Impact:** If someone runs `build-plugin.sh` locally, the `.po` files are destroyed. The `GOOGLE_TRANSLATE.sh` script suggests machine translation, which may produce low-quality translations.
 - **Fix approach:** The build script should copy, not modify in-place. Consider a dedicated translation platform (e.g., Crowdin, Weblate) to reduce maintainer burden.
 
-### Nix + devenv + flake.lock — multiple dev environment definitions — LOW
-- **Issue:** The project uses `devenv.nix` (120 lines) + `devenv.yaml` + `devenv.lock` + `flake.lock` for the primary dev shell. This provides Rust 1.95.0, KOReader, busted, lua-language-server, cargo-flamegraph, python, poetry, and various scripts (`check-format`, `check-lint`, `test-frontend`, `test-e2e`, etc.).
-- **Impact:** The Nix setup is fairly comprehensive but adds complexity. New contributors need Nix installed. The lock files must be updated regularly. CI also uses Nix (in `test.yml%`).
-- **Fix approach:** Document the dev environment setup clearly. Keep lock files updated. The CI test.yml (non-%) doesn't use Nix, so there are two parallel environment definitions.
+### Nix + flake.lock — dev environment build time — LOW
+- **Issue:** The project uses `flake.nix` with a `devShells.default` providing Rust 1.95.0, KOReader, busted, lua-language-server, and various scripts. Nix build times can be slow on first run.
+- **Impact:** First-time setup requires downloading Nix packages. Incremental changes are fast due to Nix caching.
+- **Fix approach:** Use Cachix binary cache (configured in `flake.nix`). Pre-built packages reduce build time.
 
 ### Consistent CI fragmentation — LOW
 - **Issue:** 11 workflows in `.github/workflows/`: `build.yml` (171 lines), `test.yml` (40 lines), `test.yml%` (50 lines, nix-based), `luacheck.yml` (27 lines), `deploy-pages.yml` (60 lines), and 4 gemini-* workflows. The gemini workflows (`gemini-dispatch.yml`, `gemini-invoke.yml`, `gemini-review.yml`, `gemini-triage.yml`, `gemini-scheduled-triage.yml`) use AI for code review/triage.

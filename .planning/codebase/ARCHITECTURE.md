@@ -228,7 +228,7 @@
 - **Global state:** `JAVA_VM`, `SERVER_CLASS`, `NET_PENDING` static singletons in JNI module (`backend/server/src/jni.rs`). `OnceLock`-protected. `ServerState` singleton behind `AsyncMutex<Option<ServerState>>` for the JNI lifecycle.
 - **Circular imports:** Not detected between crates. The workspace dependency graph is a DAG: `server → shared`, `server ← wasm_macros ← wasm_shared`, `cbz_metadata_reader → shared`.
 - **File system access:** Server binary receives a `home_path` argument where it creates `sources/`, `database.db`, `settings.json`, `downloads/`. All server state is relative to this path. No global config.
-- **Cross-compilation:** Rust 1.95.0, 5 targets via `cross` + Podman: `x86_64-unknown-linux-musl`, `aarch64-unknown-linux-musl`, `arm-unknown-linux-musleabi`, `arm-unknown-linux-musleabihf`, `aarch64-linux-android`. Nix flakes for native dev shell (`devenv.nix`).
+- **Cross-compilation:** Rust 1.95.0, 5 targets via `cross` + Podman: `x86_64-unknown-linux-musl`, `aarch64-unknown-linux-musl`, `arm-unknown-linux-musleabi`, `arm-unknown-linux-musleabihf`, `aarch64-linux-android`. Nix flakes for native dev shell (`flake.nix` devShells.default).
 
 ## Anti-Patterns
 

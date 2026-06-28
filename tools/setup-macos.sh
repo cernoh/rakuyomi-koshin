@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Sets up a local macOS development environment without requiring Nix/devenv.
+# Sets up a local macOS development environment without requiring Nix (or using the flake devShell).
 # Safe to re-run — existing extracted KOReader is reused, plugin is always refreshed.
 
 set -e

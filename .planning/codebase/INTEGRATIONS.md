@@ -133,10 +133,10 @@ The server supports two source runtimes for loading manga from external sources 
 
 | Component | Technology | Details | Key File |
 |---|---|---|---|
-| Dev shell | Nix flakes + devenv | Reproducible development environment | `flake.nix`, `devenv.nix` |
-| Nix packages | Nixpkgs (nixos-unstable) | System dependencies: fontconfig, freetype, Lua, gettext, etc. | `devenv.nix` |
+| Dev shell | Nix flakes (`devShells.default`) | Reproducible development environment | `flake.nix` |
+| Nix packages | Nixpkgs (nixos-unstable) | System dependencies: fontconfig, freetype, Lua, gettext, etc. | `flake.nix` devShell |
 | Rust toolchain | rust-overlay (Nix) | Rust + cross-compilation targets via Nix | `flake.nix` |
-| Binary caching | Cachix | CI cache for Nix derivations | `devenv.nix` |
+| Binary caching | Cachix | CI cache for Nix derivations | `flake.nix` devShell |
 | Build helper lib | Crane | Nix-native Cargo build (used in flake.nix but CI uses `cross` instead) | `flake.nix` |
 
 ## Webhooks & Callbacks
