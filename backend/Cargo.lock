@@ -232,6 +232,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "async-trait"
+version = "0.1.89"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9035ad2d096bed7955a320ee7e2230574d28fd3c3a0f186cbea1ff3c7eed5dbb"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "atoi"
 version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3531,6 +3542,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "qrcode"
+version = "0.14.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d68782463e408eb1e668cf6152704bd856c78c5b6417adaee3203d8f4c1fc9ec"
+dependencies = [
+ "image",
+]
+
+[[package]]
 name = "quick-error"
 version = "2.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4286,21 +4306,30 @@ name = "server"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "async-trait",
  "axum",
  "axum-macros",
+ "base64",
+ "chrono",
  "clap",
  "futures",
+ "hex",
  "humansize",
+ "image",
  "jni",
  "libc",
  "log",
  "nix 0.31.3",
+ "qrcode",
+ "rand 0.8.6",
  "reqwest",
  "serde",
  "serde_bytes",
  "serde_json",
+ "sha2 0.11.0",
  "shared",
  "size",
+ "sqlx",
  "tokio",
  "tokio-util",
  "tracing-subscriber",
