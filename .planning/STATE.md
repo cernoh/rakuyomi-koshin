@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: phase-1-complete
-last_updated: "2026-06-28T16:45:00.000Z"
+last_updated: "2026-06-28T17:35:00.000Z"
 progress:
   total_phases: 3
   completed_phases: 1
@@ -35,6 +35,14 @@ Add AniList and MyAnimeList tracking support to RakuYomi, enabling two-way sync 
 | 1 | Backend Foundation — DB + Auth + QR | Complete |
 | 2 | Tracker API Integration + Sync Engine | Planned |
 | 3 | Frontend — Lua UI Integration | Planned |
+
+## Quick Tasks
+
+| Slug | Date | Status | Summary |
+|------|------|--------|---------|
+| `add-test-script` | 2026-06-28 | complete ✓ | `cargo-test` devShell function in `flake.nix`: runs `cargo test --all`, then sources `tools/run-koreader-with-plugin.sh` to launch KOReader with the plugin (logs in terminal). |
+| `remove-devenv` | 2026-06-28 | in-progress | Migrate `devenv` → `flake.nix` devShell. `devenv.nix`/`devenv.yaml`/`devenv.lock` deleted, `devShells.default` added to `flake.nix`. Remaining: finish `.envrc.dist` and docs sweep. |
+
 
 ## Session: Phase 1 Execution
 **2026-06-28** — Executed all three plans (01-01 data layer, 01-02 OAuth + QR, 01-03 HTTP routes). `cargo check --all` and `cargo test --all` both pass (31 tests in `shared` green). Summaries committed per plan. Runtime verification of the 6 endpoints (`GET /track/services`, `POST /track/{tracker}/auth-url`, `GET /track/qr/{qr_id}`, `POST /track/{tracker}/auth`, `DELETE /track/{tracker}/auth`, `GET /track/{tracker}/status`) deferred to human per plan checkpoint.

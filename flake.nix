@@ -141,6 +141,16 @@
           koreaderWithRakuyomiFrontend = pkgs.callPackage ./packages/koreader.nix {
             plugins = [ pluginFolderWithoutServer ];
           };
+
+          pkgsDev = import nixpkgs {
+            inherit system;
+            overlays = [ (import rust-overlay) ];
+            config.permittedInsecurePackages = [ "openssl-1.1.1w" ];
+          };
+
+          koreaderFrontendPath = if pkgs.stdenv.isDarwin
+            then "${koreader}/Applications/KOReader.app/Contents/koreader/frontend"
+            else "${koreader}/lib/koreader/frontend";
           
           # FIXME this is really bad and relies on `mkCliPackage` copying the _entire_
           # target folder to the nix store (which is really bad too)
@@ -194,6 +204,92 @@
           settings-schema = mkSchemaFile desktopTarget;
         };
         packages.cargo-debugger = cargoDebugger;
+
+        devShells.default = pkgs.mkShell {
+          nativeBuildInputs = with pkgs; [
+            (pkgsDev.rust-bin.stable."1.95.0".default.override {
+              extensions = [ "rustfmt" "clippy" "rust-src" ];
+            })
+            clang
+            gcc
+            git
+            pkg-config
+            lua-language-server
+            luajitPackages.busted
+            mdbook
+            mdbook-admonish
+            python313
+            python313Packages.tkinter
+            poetry
+            sqlx-cli
+            sshpass
+            cargo-flamegraph
+            freetype
+            fontconfig
+            koreader
+            cargoDebugger
+          ] ++ lib.optionals pkgs.stdenv.isLinux [
+            mold-wrapped
+          ] ++ lib.optionals pkgs.stdenv.isDarwin [
+            libiconv
+            darwin.apple_sdk.frameworks.SystemConfiguration
+          ];
+
+          shellHook = ''
+            mkdir -p .cargo
+          '' + pkgs.lib.optionalString pkgs.stdenv.isLinux ''
+            cat > .cargo/config.toml << CONFIGEOF
+        [target.x86_64-unknown-linux-gnu]
+        linker = "${pkgs.clang}/bin/clang"
+        rustflags = ["-C", "link-arg=--ld-path=${pkgs.mold-wrapped}/bin/mold"]
+        CONFIGEOF
+          '' + ''
+            cat > .luarc.json << 'LUACEOF'
+        {
+          "$schema": "https://raw.githubusercontent.com/sumneko/vscode-lua/master/setting/schema.json",
+          "diagnostics.globals": ["G_reader_settings"],
+          "workspace.library": [
+            "''${3rd}/luassert/library",
+            "''${3rd}/busted/library",
+            "${koreaderFrontendPath}"
+          ],
+          "runtime.version": "LuaJIT",
+          "diagnostics.neededFileStatus": {
+            "codestyle-check": "Any"
+          }
+        }
+        LUACEOF
+            cp .luarc.json frontend/.luarc.json
+
+            cargo fetch --manifest-path="$PWD/backend/Cargo.toml"
+
+            check-format() { cd "$PWD/backend" && cargo fmt --check; }
+            check-lint() {
+              cd "$PWD/backend" && cargo clippy -- -D warnings
+              cd "$PWD" && python3 ci/lua-language-server-check.py frontend/
+            }
+            fix-rust-format() { cd "$PWD/backend" && cargo fmt --all; }
+            fix-rust-lint() { cd "$PWD/backend" && cargo clippy --fix --allow-dirty -- -D warnings; }
+            dev() { cd "$PWD" && . tools/run-koreader-with-plugin.sh; }
+            debug() { cd "$PWD" && . tools/run-koreader-with-plugin.sh --debug; }
+            cargo-test() {
+              (cd "$PWD/backend" && cargo test --all) && . tools/run-koreader-with-plugin.sh
+            }
+            docs() { cd "$PWD/docs" && exec mdbook serve --open; }
+            prepare-sql-queries() { cd "$PWD" && . tools/prepare-sqlx-queries.sh; }
+            remote-install() { cd "$PWD" && python3 tools/install-into-remote-koreader.py; }
+            remote-ssh() { sshpass -p "" ssh -p "$REMOTE_KOREADER_SSH_PORT" -o StrictHostKeyChecking=no "root@$REMOTE_KOREADER_HOST" "$@"; }
+            test-frontend() { cd "$PWD" && busted -C frontend/rakuyomi.koplugin .; }
+            test-e2e() {
+              cd "$PWD/e2e-tests" && \
+              poetry env use "$(which python)" && \
+              poetry install --no-root && \
+              poetry run pytest "$@"
+            }
+
+            echo "RakuYomi devShell activated."
+          '';
+        };
       }
     );
 }
