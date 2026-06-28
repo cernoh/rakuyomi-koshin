@@ -1,10 +1,12 @@
 # Roadmap: RakuYomi Tracking Integration
 
-## Phase 1: Backend Foundation — Database Schema + Auth + QR
+## Phase 1: Backend Foundation — Database Schema + Auth + QR ✅ Complete (2026-06-28)
 
-**Goal**: SQLite schema for tracking, OAuth auth flow for both services, QR code generation, HTTP API for auth and service discovery.
+**Status**: Complete — all 9 tasks shipped (plans 01-01/02/03). `cargo check --all` and `cargo test --all` pass. Runtime endpoint verification (curl against the 6 `/track/*` routes) deferred to human per plan checkpoint; commands documented in `01-03-SUMMARY.md`.
 
 ### Tasks
+
+
 
 1. **Database migration** — Create `track` and `tracker_auth` SQLite tables via sqlx migration
 2. **Rust types** — Define `TrackerService` enum, `TrackEntry`, `TrackStatus`, `SyncDirection` in `shared::track` module
