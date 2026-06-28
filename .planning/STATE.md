@@ -2,30 +2,34 @@
 
 See: .planning/PROJECT.md (updated 2026-06-28)
 
-**Core value:** Reliably browse, search, download, and read manga from any source on any device KOReader runs on.
-**Current focus:** v2.0 External Tracker Sync — milestone planning
+**Core value:** Users can browse, download, and read manga from any supported source directly on their e-ink device with a KOReader-native interface.
+
+**Current focus:** Milestone — Tracking Integration (AniList + MyAnimeList)
 
 ## Active Milestone
 
-**Name:** v2.0 External Tracker Sync
-**Goal:** Integrate AniList and MyAnimeList tracking — OAuth2 authentication, push reading progress, reading status, and scores to connected tracker accounts.
-**Phase:** Planning (pre-Phase 1)
-**Started:** 2026-06-28
+### Tracking Integration: v1
 
-## Phase Progress
+Add AniList and MyAnimeList tracking support to RakuYomi, enabling two-way sync of reading progress and status. QR-code-based OAuth authentication for e-ink devices.
 
-| Phase | Status |
-|-------|--------|
-| Planning | In Progress |
-| (phases defined in ROADMAP.md) | — |
+**Phase plan:** ROADMAP.md
 
-## Key Context
+### Phases
 
-- Push-first: reading progress on chapter completion, status/scores on user action
-- AniList: GraphQL, OAuth2, no PKCE
-- MyAnimeList: REST v2, OAuth2 with PKCE
-- OAuth2 flow: Rust localhost redirect server catches callback
-- Tokens stored in SQLite
+| # | Phase | Status |
+|---|-------|--------|
+| 1 | Backend Foundation — DB + Auth + QR | Planned |
+| 2 | Tracker API Integration + Sync Engine | Planned |
+| 3 | Frontend — Lua UI Integration | Planned |
 
----
-*Last updated: 2026-06-28 after milestone init*
+## Session: Phase 1 Context Discussion
+**2026-06-28** — Discussed DB schema, OAuth architecture, PKCE state management, QR delivery.
+Decisions captured in `.planning/phases/01-backend-foundation-database-schema-auth-qr/01-CONTEXT.md`.
+
+### Current Phase
+
+Phase 1 — Context gathered, ready for planning.
+
+### Next Action
+
+Run `/gsd-plan-phase 1` to create execution plan for Phase 1.
