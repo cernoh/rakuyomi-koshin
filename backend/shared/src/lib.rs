@@ -11,6 +11,7 @@ pub mod source;
 pub mod source_collection;
 pub mod source_manager;
 pub(crate) mod unscrable_image;
+pub mod track;
 #[cfg(feature = "all")]
 pub mod usecases;
 pub mod util;
