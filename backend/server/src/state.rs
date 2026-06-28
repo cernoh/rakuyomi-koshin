@@ -10,6 +10,7 @@ use tokio_util::sync::CancellationToken;
 use axum::extract::FromRef;
 
 use crate::job::State as JobState;
+use crate::track::state::TrackState;
 
 /// A shared log of startup warnings/errors to be displayed to the user via Lua.
 #[derive(Clone)]
@@ -50,10 +51,17 @@ pub struct State {
     pub cancel_token_store: Arc<Mutex<HashMap<usize, CancellationToken>>>,
     pub download_semaphore: Arc<Semaphore>,
     pub startup_log: StartupLog,
+    pub track_state: TrackState,
 }
 
 impl FromRef<State> for JobState {
     fn from_ref(state: &State) -> Self {
         state.job_state.clone()
+    }
+}
+
+impl FromRef<State> for TrackState {
+    fn from_ref(state: &State) -> Self {
+        state.track_state.clone()
     }
 }

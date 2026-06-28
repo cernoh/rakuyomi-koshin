@@ -26,7 +26,7 @@ use shared::usecases::install_update::cleanup_update_backup;
 use crate::build_info::{get_build_info, DEFAULT_SETTINGS_JSON};
 use crate::listener::{pick_listener, ResolvedListener};
 use crate::state::State;
-use crate::{job, manga, playlists, settings, source, system, update};
+use crate::{job, manga, playlists, settings, source, system, track, update};
 
 /// Initialize logging. Safe to call multiple times; only the first invocation
 /// actually installs the subscriber.
@@ -165,6 +165,7 @@ pub async fn build_state(home_path: PathBuf) -> Result<State> {
         cancel_token_store: Arc::new(Mutex::new(HashMap::new())),
         download_semaphore: Arc::new(Semaphore::new(3)),
         startup_log,
+        track_state: track::state::TrackState::new(),
     };
 
     {
