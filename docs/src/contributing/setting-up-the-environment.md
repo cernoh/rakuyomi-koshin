@@ -11,6 +11,10 @@ Before proceeding, you'll need the following tools installed:
 - [Nix](https://nixos.org/download.html) with [flakes enabled](https://nixos.wiki/wiki/Flakes#Enable_flakes), used to provide development dependencies
 - [direnv](https://direnv.net/docs/installation.html) (optional, with [`nix-direnv`](https://github.com/nix-community/nix-direnv)), used to automatically enter the development environment
 
+```admonish tip
+[`nix-direnv`](https://github.com/nix-community/nix-direnv) caches the devShell evaluation and makes subsequent `cd` reloads nearly instant instead of re-evaluating the flake. On NixOS install it with `programs.nix-direnv.enable = true;` (home-manager), or run `nix profile install nixpkgs#nix-direnv` for an ad-hoc install. `.envrc.dist` already calls `watch_file flake.nix flake.lock` so the cache invalidates automatically when the flake changes.
+```
+
 ```admonish note
 Running KOReader under WSL requires [WSLg](https://learn.microsoft.com/en-us/windows/wsl/tutorials/gui-apps) to be configured.
 ```

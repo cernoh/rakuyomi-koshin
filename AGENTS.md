@@ -80,7 +80,7 @@ make update-trans
 
 ### Nix development environment
 
-`flake.nix` (devShells.default) — reproducible dev shell via `nix develop` or `direnv`.
+`flake.nix` (devShells.default) — reproducible dev shell via `nix develop` or `direnv`. Pair direnv with [`nix-direnv`](https://github.com/nix-community/nix-direnv) (cache layer) for fast reloads; `.envrc.dist` calls `watch_file flake.nix flake.lock`.
 
 ## Verification
 

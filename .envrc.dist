@@ -1,1 +1,6 @@
 use flake
+
+# Invalidate the direnv cache when the flake inputs change. With nix-direnv
+# installed, this also drops the cached devShell evaluation so a `cd` reloads
+# the up-to-date shell instead of serving a stale cache.
+watch_file flake.nix flake.lock
