@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: phase-1-complete
-last_updated: "2026-06-28T17:35:00.000Z"
+last_updated: "2026-06-28T17:50:00.000Z"
 progress:
   total_phases: 3
   completed_phases: 1
@@ -42,6 +42,7 @@ Add AniList and MyAnimeList tracking support to RakuYomi, enabling two-way sync 
 |------|------|--------|---------|
 | `add-test-script` | 2026-06-28 | complete ✓ | `cargo-test` devShell function in `flake.nix`: runs `cargo test --all`, then sources `tools/run-koreader-with-plugin.sh` to launch KOReader with the plugin (logs in terminal). |
 | `remove-devenv` | 2026-06-28 | in-progress | Migrate `devenv` → `flake.nix` devShell. `devenv.nix`/`devenv.yaml`/`devenv.lock` deleted, `devShells.default` added to `flake.nix`. Remaining: finish `.envrc.dist` and docs sweep. |
+| `nix-test-cmd` | 2026-06-28 | complete ✓ | `test` devShell function in `flake.nix`: launch-only entrypoint that sources `tools/run-koreader-with-plugin.sh` to open KOReader with the plugin (no `cargo test` step; complements `dev`/`debug`/`cargo-test`). Commit: `6950eb2`. |
 
 
 ## Session: Phase 1 Execution
