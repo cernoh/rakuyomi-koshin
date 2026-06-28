@@ -275,6 +275,8 @@
             cargo-test() {
               (cd "$PWD/backend" && cargo test --all) && . tools/run-koreader-with-plugin.sh
             }
+            test() { cd "$PWD" && . tools/run-koreader-with-plugin.sh; }
+
             docs() { cd "$PWD/docs" && exec mdbook serve --open; }
             prepare-sql-queries() { cd "$PWD" && . tools/prepare-sqlx-queries.sh; }
             remote-install() { cd "$PWD" && python3 tools/install-into-remote-koreader.py; }
