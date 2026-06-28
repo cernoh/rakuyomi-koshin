@@ -1,96 +1,145 @@
-# Requirements: RakuYomi
+# Requirements: RakuYomi Tracking Integration
 
 **Defined:** 2026-06-28
-**Core Value:** Reliably browse, search, download, and read manga from any source on any device KOReader runs on.
+**Core Value:** Users can browse, download, and read manga from any supported source directly on their e-ink device with a KOReader-native interface.
 
-## v2.0 Requirements — External Tracker Sync
+## v1 Requirements
 
-Requirements for milestone v2.0. Each maps to roadmap phases.
+Requirements for the Tracking Integration milestone. Each maps to roadmap phases.
 
-### Authentication & Connections
+### Backend: Database & Core Models
 
-- [ ] **AUTH-01**: User can initiate OAuth2 flow for AniList from settings
-- [ ] **AUTH-02**: User can initiate OAuth2 flow for MyAnimeList from settings
-- [ ] **AUTH-03**: AniList OAuth2 completes via KOReader webview + backend localhost redirect server
-- [ ] **AUTH-04**: MyAnimeList OAuth2 completes via KOReader webview + backend localhost redirect server (with PKCE plain)
-- [ ] **AUTH-05**: OAuth tokens are persisted in SQLite across app restarts
-- [ ] **AUTH-06**: Expired tokens (MAL refresh) are automatically refreshed
-- [ ] **AUTH-07**: User can disconnect/remove a tracker connection from settings
-- [ ] **AUTH-08**: User can view connection status for each tracker in settings
+- [ ] **DB-01**: Backend has a `track` SQLite table with fields: id, manga_id (FK), tracker_id, remote_id, library_id, title, last_chapter_read, total_chapters, status, score, start_date, finish_date, tracking_url, private, updated_at
+- [ ] **DB-02**: Backend has a `tracker_auth` SQLite table for storing OAuth tokens per tracker service (tracker_id, token_json, expires_at, created_at)
+- [ ] **DB-03**: Backend exposes Rust types for tracker operations (TrackerService enum, TrackEntry struct, TrackStatus, SyncDirection)
+- [ ] **DB-04**: SQLx migration files for new tables with proper indices
 
-### Manga Linking
+### Backend: AniList Integration
 
-- [ ] **LINK-01**: User can search AniList by manga title to link a library manga to a tracker ID
-- [ ] **LINK-02**: User can search MyAnimeList by manga title to link a library manga to a tracker ID
-- [ ] **LINK-03**: Linked tracker media ID is stored per manga in SQLite
-- [ ] **LINK-04**: User can unlink a manga from its tracker entry
-- [ ] **LINK-05**: Tracker-linked status is visible in manga info panel
+- [ ] **AL-01**: Backend can generate AniList OAuth authorization URL for QR display
+- [ ] **AL-02**: Backend can exchange an OAuth token with AniList API (implicit grant)
+- [ ] **AL-03**: Backend stores AniList credentials and verifies login status
+- [ ] **AL-04**: Backend can search manga on AniList via GraphQL API
+- [ ] **AL-05**: Backend can create/update AniList list entry (add manga to tracking)
+- [ ] **AL-06**: Backend can fetch remote tracking data from AniList for a manga
+- [ ] **AL-07**: Backend can delete manga from AniList user list
+- [ ] **AL-08**: Backend handles AniList status mapping (local ↔ API) and score conversion
+- [ ] **AL-09**: Backend respects AniList rate limits (85 req/min)
 
-### Progress Sync
+### Backend: MyAnimeList Integration
 
-- [ ] **SYNC-01**: Reading progress (latest read chapter number) is pushed to all connected trackers when a chapter is marked read
-- [ ] **SYNC-02**: User can manually trigger a sync for a single manga from the manga info panel
-- [ ] **SYNC-03**: User can manually trigger a bulk sync for all linked manga
-- [ ] **SYNC-04**: Sync operations are non-blocking — shown as background jobs with progress
-- [ ] **SYNC-05**: Rate limits are respected (AniList: 90 req/min, MAL: ~1 req/s) with retry/backoff
+- [ ] **ML-01**: Backend can generate MAL OAuth authorization URL with PKCE for QR display
+- [ ] **ML-02**: Backend can exchange an authorization code with MAL API (PKCE flow)
+- [ ] **ML-03**: Backend stores MAL OAuth tokens and can refresh them automatically
+- [ ] **ML-04**: Backend can search manga on MAL via REST API
+- [ ] **ML-05**: Backend can create/update MAL list entry
+- [ ] **ML-06**: Backend can fetch remote tracking data from MAL for a manga
+- [ ] **ML-07**: Backend can delete manga from MAL user list
+- [ ] **ML-08**: Backend handles MAL status mapping and score conversion
+- [ ] **ML-09**: Backend auto-refreshes MAL tokens when expired
 
-### Status & Scores
+### Backend: Sync Engine
 
-- [ ] **STAT-01**: User can set reading status per manga (Reading/Completed/Dropped/On Hold/Plan to Read)
-- [ ] **STAT-02**: Reading status syncs to all connected trackers on save
-- [ ] **STAT-03**: User can score a manga (integer 0-10) from the manga info panel
-- [ ] **STAT-04**: Score syncs to all connected trackers (with scale conversion: RakuYomi 0-10 → AniList 0-100, MAL 0-10)
-- [ ] **STAT-05**: Score display in UI reflects RakuYomi's internal scale (0-10)
+- [ ] **SYNC-01**: Backend supports bind flow: on first link, fetch remote entry if exists, otherwise create new entry with local state
+- [ ] **SYNC-02**: Backend supports push sync: send local chapter progress → remote service
+- [ ] **SYNC-03**: Backend supports pull sync: fetch remote progress → update local DB
+- [ ] **SYNC-04**: Backend applies sync conflict resolution: take max of local vs remote last chapter read
+- [ ] **SYNC-05**: Backend auto-updates reading status on chapter progress (auto-complete when all chapters read)
+- [ ] **SYNC-06**: Backend supports two-way sync that merges remote data into local without overwriting newer local reads
 
-## v2.1 Requirements (Deferred)
+### Backend: HTTP API Routes
 
-- **PULL-01**: User can import their tracker library into RakuYomi ('reading' entries appear in library)
-- **PULL-02**: Two-way sync conflict resolution (tracker vs. local state)
-- **PULL-03**: Scheduled/periodic sync (auto-push on chapter mark, periodic full sync)
-- **PULL-04**: Tracker-specific settings per manga (e.g., sync AniList but not MAL for a specific title)
-- **AUTO-01**: Automatic manga-to-tracker matching by title (no manual search needed when title matches)
+- [ ] **API-01**: `GET /track/services` — list available tracker services with login status
+- [ ] **API-02**: `POST /track/{tracker}/auth-url` — generate OAuth URL for QR code display
+- [ ] **API-03**: `POST /track/{tracker}/auth` — submit OAuth token/code to complete login
+- [ ] **API-04**: `DELETE /track/{tracker}/auth` — logout (clear credentials)
+- [ ] **API-05**: `GET /track/{tracker}/status` — check login status
+- [ ] **API-06**: `GET /track/{tracker}/search?q={query}` — search manga on tracker
+- [ ] **API-07**: `GET /track/{tracker}/manga/{remote_id}` — get remote manga details
+- [ ] **API-08**: `POST /track/bind` — link a local manga to a tracker entry (request: manga_id, tracker_id, remote_id)
+- [ ] **API-09**: `DELETE /track/unbind` — remove tracking link (request: manga_id, tracker_id)
+- [ ] **API-10**: `GET /track/{manga_id}` — get all tracking statuses for a manga
+- [ ] **API-11**: `POST /track/{manga_id}/sync` — trigger sync for a manga (push local, pull remote, merge)
+- [ ] **API-12**: `GET /track/library` — get tracking status for all library mangas (summary view)
+
+### Frontend: Lua UI
+
+- [ ] **UI-01**: Settings page has a "Tracking" section listing available tracker services
+- [ ] **UI-02**: Each tracker service shows login status with connect/disconnect action
+- [ ] **UI-03**: Connect flow shows QR code (and text URL fallback) for OAuth authorization
+- [ ] **UI-04**: Connect flow accepts OAuth token/code input after phone authorization
+- [ ] **UI-05**: Manga info view shows tracking section per bound tracker (status, progress, score)
+- [ ] **UI-06**: "Track" button on manga info opens search dialog to find manga on tracker
+- [ ] **UI-07**: Track search dialog shows results from tracker, allows selection and binding
+- [ ] **UI-08**: Bound manga shows sync status with manual sync button
+- [ ] **UI-09**: Library view optionally shows tracking badges (manga bound to tracker)
+- [ ] **UI-10**: Reading a chapter automatically triggers sync for bound mangas
+- [ ] **UI-11**: Error states displayed when sync fails (network, auth expired, etc.)
+
+### QR Authentication
+
+- [ ] **QR-01**: Backend generates QR-code-compatible OAuth URLs (using `qrcode` crate or similar)
+- [ ] **QR-02**: Backend encodes OAuth URL as PNG image for display on e-ink
+- [ ] **QR-03**: Frontend displays QR code image in a centered dialog
+- [ ] **QR-04**: Fallback: display plain text OAuth URL alongside QR code
+- [ ] **QR-05**: Auth completion flow with manual token/code input
+- [ ] **QR-06**: MAL PKCE flow: code verifier tied to session, auth URL encodes challenge
+
+## v2 Requirements
+
+Deferred to future release. Tracked but not in current roadmap.
+
+### Additional Trackers
+
+- **Kitsu tracker** — Same pattern, Kitsu has public REST API
+- **Bangumi tracker** — Chinese market tracker
+- **Shikimori tracker** — Russian market tracker
+
+### Enhanced Sync
+
+- **Library-wide batch sync** — Sync all tracked mangas in one operation
+- **Auto-sync on library refresh** — Sync tracking data when refreshing library
+- **Delayed sync queue** — Queue failed syncs and retry on next app launch
+- **Conflicts UI** — Show sync conflicts for user resolution
+
+### Features
+
+- **Auto-track on manga add** — Automatically bind manga to tracker if title matches
+- **Sync on chapter download** — Trigger sync even without reading (for pre-downloaded chapters)
+- **Multi-user** — Switch between multiple tracker accounts
 
 ## Out of Scope
 
 | Feature | Reason |
 |---------|--------|
-| Kitsu/MALgraph/other trackers | Only AniList and MAL have significant manga-reader user base. Adding more would triple the OAuth/API surface without proportional value. |
-| Pull from trackers (library import) | Conflict resolution and UI for merging is significant scope. Deferred to v2.1. |
-| Tachiyomi/TachiSYNC import | Different data model, would require bespoke format parsing. Only if user demand emerges. |
-| Silent auto-sync without user confirmation | Must be explicit per-manga opt-in. No silent sync. |
-| Native Android OAuth (Custom Tabs) | KOReader cross-platform model means one solution for all: webview + localhost redirect server. |
+| Kitsu/Bangumi/Shikimori/Komga trackers | v1 focuses on AniList + MAL (95%+ of users); others later |
+| Automatic background periodic sync | e-ink battery constraints; v1 uses manual + on-read |
+| Library-wide batch sync | Adds complexity; per-manga sync sufficient for v1 |
+| EnhancedTracker (auto-match) | Requires source-specific mapping; v1 uses manual search+bind |
+| OAuth via embedded WebView | No browser engine available on e-ink; QR auth is the correct solution |
+| Sync conflict resolution UI | v1 uses max-take strategy (simplest merge); manual resolution deferred |
+| Comments/social features | Outside scope of a reader plugin |
 
 ## Traceability
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUTH-01 | Phase 1 | Pending |
-| AUTH-02 | Phase 1 | Pending |
-| AUTH-03 | Phase 1 | Pending |
-| AUTH-04 | Phase 1 | Pending |
-| AUTH-05 | Phase 2 | Pending |
-| AUTH-06 | Phase 2 | Pending |
-| AUTH-07 | Phase 3 | Pending |
-| AUTH-08 | Phase 3 | Pending |
-| LINK-01 | Phase 2 | Pending |
-| LINK-02 | Phase 2 | Pending |
-| LINK-03 | Phase 2 | Pending |
-| LINK-04 | Phase 3 | Pending |
-| LINK-05 | Phase 3 | Pending |
-| SYNC-01 | Phase 3 | Pending |
-| SYNC-02 | Phase 3 | Pending |
-| SYNC-03 | Phase 3 | Pending |
-| SYNC-04 | Phase 3 | Pending |
-| SYNC-05 | Phase 3 | Pending |
-| STAT-01 | Phase 3 | Pending |
-| STAT-02 | Phase 3 | Pending |
-| STAT-03 | Phase 3 | Pending |
-| STAT-04 | Phase 3 | Pending |
-| STAT-05 | Phase 3 | Pending |
+| DB-01, DB-02, DB-03, DB-04 | Phase 1 | Pending |
+| API-01, API-02, API-03, API-04, API-05 | Phase 1 | Pending |
+| AL-01, AL-02, AL-03 | Phase 1 | Pending |
+| ML-01, ML-02, ML-03 | Phase 1 | Pending |
+| QR-01, QR-02, QR-04, QR-05, QR-06 | Phase 1 | Pending |
+| QR-03 | Phase 3 | Pending |
+| AL-04, AL-05, AL-06, AL-07, AL-08, AL-09 | Phase 2 | Pending |
+| ML-04, ML-05, ML-06, ML-07, ML-08, ML-09 | Phase 2 | Pending |
+| API-06, API-07, API-08, API-09, API-10, API-11, API-12 | Phase 2 | Pending |
+| SYNC-01, SYNC-02, SYNC-03, SYNC-04, SYNC-05, SYNC-06 | Phase 2 | Pending |
+| UI-01, UI-02, UI-03, UI-04 | Phase 3 | Pending |
+| UI-05, UI-06, UI-07, UI-08, UI-09, UI-10, UI-11 | Phase 3 | Pending |
 
 **Coverage:**
-- v2.0 requirements: 24 total
-- Mapped to phases: 24
+- v1 requirements: 39 total
+- Mapped to phases: 39
 - Unmapped: 0 ✓
 
 ---

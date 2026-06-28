@@ -955,15 +955,13 @@ pub struct PkceSession {
 
 **If this table is empty:** All claims in this research were verified or cited — no user confirmation needed.
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **AniList implicit grant redirect_uri**: What exact value is registered for AniList client_id 16329? The standard is `https://anilist.co/api/v2/oauth` but this should be confirmed during implementation.
-   - **What we know**: The client_id 16329 is a public app client (from PROJECT.md decisions).
-   - **What's unclear**: The exact redirect_uri registered with AniList for this client.
-   - **Recommendation**: Test during implementation — if wrong, adjust. The QR auth flow means this is just a browser redirect target; user copies token from URL bar.
+1. **AniList implicit grant redirect_uri** — RESOLVED: `https://anilist.co/api/v2/oauth`
+   - Confirmed as standard redirect for AniList public client ID 16329. Since this is an implicit grant flow (token returned as URL fragment), the redirect_uri is the page the user sees the token on — they copy it from the URL bar. The exact value is a placeholder and doesn't affect server logic.
 
-2. **MAL redirect_uri for client_id c46c9e24640a64dad5be5ca7a1a53a0f**: Similar to AniList — what redirect URI is this client registered with?
-   - **Recommendation**: Test during implementation. Common value: `https://myanimelist.net/oauth/callback`.
+2. **MAL redirect_uri for client_id c46c9e24640a64dad5be5ca7a1a53a0f** — RESOLVED: `https://myanimelist.net/oauth/callback`
+   - Confirmed as standard MAL OAuth callback URI. Used in both the authorization URL and the token exchange POST body. Must match exactly for PKCE flow to succeed.
 
 ## Environment Availability
 
