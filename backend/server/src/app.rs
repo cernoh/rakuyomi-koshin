@@ -51,7 +51,8 @@ pub fn build_router(state: State) -> Router {
         .merge(settings::routes())
         .merge(source::routes())
         .merge(update::routes())
-        .merge(system::routes());
+        .merge(system::routes())
+        .merge(track::routes());
     #[cfg(feature = "ffi")]
     let router = router
         .layer(middleware::from_fn(request_logger))

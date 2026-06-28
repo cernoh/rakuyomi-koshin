@@ -42,6 +42,23 @@ const BIND_LIMIT: usize = 32766;
 
 // FIXME add proper error handling
 impl Database {
+    /// Acquire a read-locked handle to the underlying SQLite pool.
+    /// Route handlers and other inline query sites that need to run
+    /// ad-hoc sqlx queries use this. Returns a `sqlx::Pool<Sqlite>`
+    /// (cheaply cloneable) so callers don't need to manage the lock
+    /// themselves — the read guard is dropped as soon as the value
+    /// crosses the await point, but `Pool` internally holds its own
+    /// Arc so the connection pool outlives the guard.
+    pub async fn pool(&self) -> Pool<Sqlite> {
+        self.pool.read().await.clone()
+    }
+
+    /// Public path to the on-disk database file. Used by the SQLite
+    /// metadata reader binary, which needs the filename at startup.
+    pub fn filename(&self) -> &Path {
+        &self.filename
+    }
+
     pub async fn new(filename: &Path) -> Result<Self> {
         let options = SqliteConnectOptions::new()
             .filename(filename)
