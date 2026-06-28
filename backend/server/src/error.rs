@@ -26,6 +26,7 @@ pub enum AppError {
     NotFound,
     DownloadAllChaptersProgressNotFound,
     NetworkFailure(anyhow::Error),
+    OAuth(String),
     Other(anyhow::Error),
     MountTmpFs(anyhow::Error),
 }
@@ -56,6 +57,7 @@ impl From<&AppError> for StatusCode {
             AppError::SourceNotFound
             | AppError::NotFound
             | AppError::DownloadAllChaptersProgressNotFound => StatusCode::NOT_FOUND,
+            AppError::OAuth(_) => StatusCode::BAD_REQUEST,
             _ => StatusCode::INTERNAL_SERVER_ERROR,
         }
     }
@@ -72,6 +74,7 @@ impl From<&AppError> for ErrorResponse {
             AppError::NetworkFailure(_) => {
                 "There was a network error. Check your connection and try again.".to_string()
             }
+            AppError::OAuth(ref msg) => msg.clone(),
             AppError::MountTmpFs(ref e) => format!("Failed to mount tmpfs: {}{}", e, setcap_hint()),
             AppError::Other(ref e) => {
                 eprintln!("Unexpected error: {:?}", e);
