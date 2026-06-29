@@ -11,7 +11,7 @@
 
 set -e
 
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+REPO_ROOT="${RAKUYOMI_REPO_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 KOREADER_BIN="$REPO_ROOT/build/macos/KOReader.app/Contents/MacOS/koreader"
 # setup-macos.sh installs the plugin to the user data dir when it exists (to avoid
 # double-loading), so resolve the effective plugin dir the same way.

@@ -156,6 +156,86 @@
             cd "$(git rev-parse --show-toplevel)"
             exec bash ${./tools/run-koreader-with-plugin.sh} --debug
           '';
+          # All other devShell helpers (cargo-test, check-format,
+          # check-lint, fix-rust-format, fix-rust-lint, docs,
+          # prepare-sql-queries, remote-install, remote-ssh,
+          # test-frontend, test-e2e, dev-linux, dev-macos): same
+          # writeShellScriptBin pattern as dev/debug above. The
+          # shellHook bash functions are kept for back-compat with
+          # `nix develop` interactive bash.
+          rakuyomiCargoTest = pkgs.writeShellScriptBin "cargo-test" ''
+            set -e
+            REPO_ROOT="$(git rev-parse --show-toplevel)"
+            (cd "$REPO_ROOT/backend" && cargo test --all)
+            exec bash ${./tools/run-koreader-with-plugin.sh}
+          '';
+          rakuyomiCheckFormat = pkgs.writeShellScriptBin "check-format" ''
+            set -e
+            cd "$(git rev-parse --show-toplevel)/backend"
+            exec cargo fmt --check
+          '';
+          rakuyomiCheckLint = pkgs.writeShellScriptBin "check-lint" ''
+            REPO_ROOT="$(git rev-parse --show-toplevel)"
+            cd "$REPO_ROOT/backend" && cargo clippy -- -D warnings
+            cd "$REPO_ROOT" && python3 ci/lua-language-server-check.py frontend/
+          '';
+          rakuyomiFixRustFormat = pkgs.writeShellScriptBin "fix-rust-format" ''
+            set -e
+            cd "$(git rev-parse --show-toplevel)/backend"
+            exec cargo fmt --all
+          '';
+          rakuyomiFixRustLint = pkgs.writeShellScriptBin "fix-rust-lint" ''
+            set -e
+            cd "$(git rev-parse --show-toplevel)/backend"
+            exec cargo clippy --fix --allow-dirty -- -D warnings
+          '';
+          rakuyomiDocs = pkgs.writeShellScriptBin "docs" ''
+            set -e
+            cd "$(git rev-parse --show-toplevel)/docs"
+            exec mdbook serve --open
+          '';
+          rakuyomiPrepareSqlQueries = pkgs.writeShellScriptBin "prepare-sql-queries" ''
+            set -e
+            cd "$(git rev-parse --show-toplevel)"
+            exec bash ${./tools/prepare-sqlx-queries.sh}
+          '';
+          rakuyomiRemoteInstall = pkgs.writeShellScriptBin "remote-install" ''
+            set -e
+            cd "$(git rev-parse --show-toplevel)"
+            exec python3 tools/install-into-remote-koreader.py "$@"
+          '';
+          rakuyomiRemoteSsh = pkgs.writeShellScriptBin "remote-ssh" ''
+            exec sshpass -p "" ssh -p "$REMOTE_KOREADER_SSH_PORT" -o StrictHostKeyChecking=no "root@$REMOTE_KOREADER_HOST" "$@"
+          '';
+          rakuyomiTestFrontend = pkgs.writeShellScriptBin "test-frontend" ''
+            set -e
+            cd "$(git rev-parse --show-toplevel)"
+            exec busted -C frontend/rakuyomi.koplugin .
+          '';
+          rakuyomiTestE2e = pkgs.writeShellScriptBin "test-e2e" ''
+            set -e
+            REPO_ROOT="$(git rev-parse --show-toplevel)"
+            cd "$REPO_ROOT/e2e-tests"
+            poetry env use "$(which python)"
+            poetry install --no-root
+            exec poetry run pytest "$@"
+          '';
+          # dev-linux / dev-macos: their .sh scripts compute REPO_ROOT
+          # from BASH_SOURCE[0], which resolves to the /nix/store path
+          # once writeShellScriptBin copies them. The wrapper passes the
+          # real repo root via the RAKUYOMI_REPO_ROOT env var, and the
+          # scripts honor the override (with BASH_SOURCE[0] as fallback
+          # so direct invocation from the repo still works).
+          rakuyomiDevLinux = pkgs.writeShellScriptBin "dev-linux" ''
+            set -e
+            cd "$(git rev-parse --show-toplevel)"
+            exec env RAKUYOMI_REPO_ROOT="$(pwd)" bash ${./tools/dev-linux.sh} "$@"
+          '';
+          rakuyomiDevMacos = pkgs.writeShellScriptBin "dev-macos" ''
+            set -e
+            cd "$(git rev-parse --show-toplevel)"
+            exec env RAKUYOMI_REPO_ROOT="$(pwd)" bash ${./tools/dev-macos.sh} "$@"
+          '';
 
           pkgsDev = import nixpkgs {
             inherit system;
@@ -245,6 +325,19 @@
             cargoDebugger
             rakuyomiDev
             rakuyomiDebug
+            rakuyomiCargoTest
+            rakuyomiCheckFormat
+            rakuyomiCheckLint
+            rakuyomiFixRustFormat
+            rakuyomiFixRustLint
+            rakuyomiDocs
+            rakuyomiPrepareSqlQueries
+            rakuyomiRemoteInstall
+            rakuyomiRemoteSsh
+            rakuyomiTestFrontend
+            rakuyomiTestE2e
+            rakuyomiDevLinux
+            rakuyomiDevMacos
           ] ++ lib.optionals pkgs.stdenv.isLinux [
             mold-wrapped
           ] ++ lib.optionals pkgs.stdenv.isDarwin [
@@ -289,10 +382,10 @@
             fix-rust-lint() { cd "$PWD/backend" && cargo clippy --fix --allow-dirty -- -D warnings; }
             dev() { cd "$PWD" && . tools/run-koreader-with-plugin.sh; }
             debug() { cd "$PWD" && . tools/run-koreader-with-plugin.sh --debug; }
+            dev-linux() { cd "$PWD" && bash tools/dev-linux.sh "$@"; }
             cargo-test() {
               (cd "$PWD/backend" && cargo test --all) && . tools/run-koreader-with-plugin.sh
             }
-            test() { cd "$PWD" && . tools/run-koreader-with-plugin.sh; }
 
             docs() { cd "$PWD/docs" && exec mdbook serve --open; }
             prepare-sql-queries() { cd "$PWD" && . tools/prepare-sqlx-queries.sh; }
