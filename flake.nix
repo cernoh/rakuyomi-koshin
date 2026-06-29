@@ -141,6 +141,21 @@
           koreaderWithRakuyomiFrontend = pkgs.callPackage ./packages/koreader.nix {
             plugins = [ pluginFolderWithoutServer ];
           };
+          # dev / debug: real binaries (not bash shellHook functions) so they
+          # work in any shell — fish, bash, zsh, nushell — under
+          # `use flake` / direnv. The shellHook `dev()` / `debug()` bash
+          # functions are kept for back-compat with bash-only users; bash
+          # prefers the function, fish has only the binary.
+          rakuyomiDev = pkgs.writeShellScriptBin "dev" ''
+            set -e
+            cd "$(git rev-parse --show-toplevel)"
+            exec bash ${./tools/run-koreader-with-plugin.sh}
+          '';
+          rakuyomiDebug = pkgs.writeShellScriptBin "debug" ''
+            set -e
+            cd "$(git rev-parse --show-toplevel)"
+            exec bash ${./tools/run-koreader-with-plugin.sh} --debug
+          '';
 
           pkgsDev = import nixpkgs {
             inherit system;
@@ -228,6 +243,8 @@
             fontconfig
             koreader
             cargoDebugger
+            rakuyomiDev
+            rakuyomiDebug
           ] ++ lib.optionals pkgs.stdenv.isLinux [
             mold-wrapped
           ] ++ lib.optionals pkgs.stdenv.isDarwin [
