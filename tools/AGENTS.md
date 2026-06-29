@@ -17,6 +17,7 @@ Owns: `tools/` directory.
 | `prepare-sqlx-queries.sh` | Prepare SQLx offline query data |
 | `setup-macos.sh` | macOS development environment setup |
 | `dev-macos.sh` | macOS development workflow script |
+| `dev-linux.sh` | Linux development workflow script (uses system koreader + cargo, no nix run) |
 
 ## Verification
 
