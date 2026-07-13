@@ -14,3 +14,4 @@
 # Contributing
 
 - [Setting up the Environment](./contributing/setting-up-the-environment.md)
+- [Tracker OAuth Setup](./contributing/tracker-oauth-setup.md)
