@@ -5,6 +5,6 @@
 //! to talk about AniList/MyAnimeList tracking (model serialization, DB
 //! row mapping, OAuth protocol messages) imports from here.
 
+pub mod client;
 pub mod types;
-
 pub use types::*;

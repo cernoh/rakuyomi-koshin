@@ -157,3 +157,54 @@ pub struct PkceSessionData {
     /// Lower-snake-case tracker id (`"anilist"` or `"myanimelist"`).
     pub tracker_id: String,
 }
+
+/// A manga result from a tracker's search API.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct TrackerMangaSearchResult {
+    /// Remote ID on the tracker (e.g. AniList media id, MAL manga id).
+    pub remote_id: String,
+    /// Title as shown on the tracker.
+    pub title: String,
+    /// Total chapter count reported by the tracker, if known.
+    pub total_chapters: Option<i32>,
+    /// Cover image URL, if available.
+    pub cover_url: Option<String>,
+    /// Description/synopsis snippet.
+    pub description: Option<String>,
+}
+
+/// Input for updating progress on a tracker.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct ProgressUpdate {
+    pub chapters_read: i32,
+    pub status: Option<TrackStatus>,
+    pub score: Option<i32>,
+    pub start_date: Option<String>,
+    pub finish_date: Option<String>,
+}
+
+/// Result of a progress update call to a tracker.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct TrackerUpdateResult {
+    /// The remote manga ID (echoed back for convenience).
+    pub remote_id: String,
+    /// Library entry ID (AniList's `mediaListEntry.id`; MAL doesn't use this).
+    pub library_id: Option<String>,
+    /// The tracker's view of chapters read after the update.
+    pub chapters_read: i32,
+    /// The tracker's view of the status after the update.
+    pub status: Option<TrackStatus>,
+}
+
+/// Current progress for a manga as reported by the tracker.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct TrackerProgress {
+    pub remote_id: String,
+    pub library_id: Option<String>,
+    pub chapters_read: i32,
+    pub total_chapters: Option<i32>,
+    pub status: Option<TrackStatus>,
+    pub score: Option<i32>,
+    pub start_date: Option<String>,
+    pub finish_date: Option<String>,
+}
