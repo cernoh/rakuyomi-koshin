@@ -301,3 +301,98 @@ pub async fn drain_sync_queue(
 
     Ok(())
 }
+
+/// Pull progress from all trackers for all tracked manga and reconcile.
+///
+/// Conflict resolution: take the higher value. If `track_sync_queue`
+/// has a pending push for a manga, the local value is authoritative
+/// (skip the pull for that entry).
+pub async fn pull_sync_all(
+    database: &Arc<shared::database::Database>,
+    http_client: &reqwest::Client,
+) -> Result<Vec<String>> {
+    let pool = database.pool().await;
+    let rows: Vec<(String, String, String, String, i32)> = sqlx::query_as(
+        "SELECT tracker_id, manga_source_id, manga_id, remote_id, last_chapter_read \
+         FROM track WHERE remote_id IS NOT NULL",
+    )
+    .fetch_all(&pool)
+    .await?;
+    drop(pool);
+
+    // Get set of manga with pending pushes (local is authoritative).
+    let pool = database.pool().await;
+    let queued: Vec<(String, String, String)> = sqlx::query_as(
+        "SELECT tracker_id, manga_source_id, manga_id FROM track_sync_queue",
+    )
+    .fetch_all(&pool)
+    .await?;
+    drop(pool);
+
+    let queued_set: std::collections::HashSet<(String, String, String)> =
+        queued.into_iter().collect();
+
+    let mut messages = Vec::new();
+
+    for (tracker_id_str, source_id, manga_id, remote_id, local_progress) in rows {
+        // Skip if there's a pending push for this entry.
+        if queued_set.contains(&(tracker_id_str.clone(), source_id.clone(), manga_id.clone())) {
+            continue;
+        }
+
+        let tracker: TrackerService = match tracker_id_str.parse() {
+            Ok(t) => t,
+            Err(_) => continue,
+        };
+
+        let token = match crate::track::routes::get_valid_token(database, tracker).await {
+            Ok(t) => t,
+            Err(_) => continue,
+        };
+
+        let remote = match tracker {
+            TrackerService::AniList => {
+                AniListClient::new()
+                    .get_progress(http_client, &token, &remote_id)
+                    .await
+            }
+            TrackerService::MyAnimeList => {
+                MalClient::new()
+                    .get_progress(http_client, &token, &remote_id)
+                    .await
+            }
+        };
+
+        match remote {
+            Ok(Some(progress)) => {
+                let remote_ch = progress.chapters_read;
+                if remote_ch > local_progress {
+                    // Remote is ahead — update local.
+                    let pool = database.pool().await;
+                    sqlx::query(
+                        "UPDATE track SET last_chapter_read = ?, updated_at = datetime('now') \
+                         WHERE tracker_id = ? AND manga_source_id = ? AND manga_id = ?",
+                    )
+                    .bind(remote_ch)
+                    .bind(tracker.as_str())
+                    .bind(&source_id)
+                    .bind(&manga_id)
+                    .execute(&pool)
+                    .await?;
+                    drop(pool);
+
+                    messages.push(format!(
+                        "{} {}/{}: pulled {} (was {})",
+                        tracker, source_id, manga_id, remote_ch, local_progress
+                    ));
+                }
+            }
+            Ok(None) => {} // Not on tracker's list yet.
+            Err(e) => {
+                warn!("pull sync: failed for {} {}/{}: {e:?}", tracker, source_id, manga_id);
+            }
+        }
+    }
+
+    Ok(messages)
+}

@@ -41,6 +41,7 @@ pub fn routes() -> Router<State> {
     Router::new()
         .route("/services", get(list_services))
         .route("/sync-queue", get(get_sync_queue))
+        .route("/pull-sync", post(pull_sync))
         .route("/{tracker}/auth-url", post(generate_auth_url))
         .route("/qr/{qr_id}", get(get_qr_code))
         .route("/{tracker}/auth", post(submit_auth).delete(clear_auth))
@@ -465,6 +466,20 @@ async fn get_sync_queue(
         })
         .collect();
     Ok(Json(items))
+}
+
+/// `POST /track/pull-sync` — pull progress from all trackers for all tracked manga.
+async fn pull_sync(
+    StateExtractor(State {
+        database,
+        track_state,
+        ..
+    }): StateExtractor<State>,
+) -> Result<Json<Vec<String>>, AppError> {
+    let messages = crate::track::sync::pull_sync_all(&database, &track_state.http_client)
+        .await
+        .map_err(|e| AppError::Other(e))?;
+    Ok(Json(messages))
 }
 
 /// DB row mirror for `track` — uses `Option<String>` for `status` since
