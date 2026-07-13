@@ -37,12 +37,15 @@ pub struct PkceSession {
 #[derive(Clone)]
 pub struct TrackState {
     pkce_sessions: Arc<Mutex<HashMap<String, PkceSession>>>,
+    /// Shared HTTP client for tracker API calls (AniList GraphQL, MAL REST).
+    pub http_client: reqwest::Client,
 }
 
 impl TrackState {
     pub fn new() -> Self {
         Self {
             pkce_sessions: Arc::new(Mutex::new(HashMap::new())),
+            http_client: reqwest::Client::new(),
         }
     }
 

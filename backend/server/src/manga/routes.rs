@@ -557,11 +557,14 @@ async fn mark_chapters_as_read(
     StateExtractor(State {
         database,
         chapter_storage,
+        track_state,
         ..
     }): StateExtractor<State>,
     Path(params): Path<MangaChaptersPathParams>,
     Json(MangaMarkChaptersAsRead { range, state }): Json<MangaMarkChaptersAsRead>,
 ) -> Result<Json<Option<usize>>, AppError> {
+    let source_id = params.source_id.clone();
+    let manga_id_str = params.manga_id.clone();
     let manga_id = MangaId::from(params);
 
     let chapter_storage = &*chapter_storage.lock().await;
@@ -569,6 +572,24 @@ async fn mark_chapters_as_read(
     let count =
         usecases::mark_chapters_as_read(&database, chapter_storage, manga_id, &range, state)
             .await?;
+
+    // Fire-and-forget tracker sync.
+    if state {
+        let db = database.clone();
+        let http = track_state.http_client.clone();
+        tokio::spawn(async move {
+            if let Err(e) = crate::track::sync::sync_tracker_progress(
+                &db,
+                &http,
+                &source_id,
+                &manga_id_str,
+            )
+            .await
+            {
+                log::warn!("tracker sync failed: {e}");
+            }
+        });
+    }
 
     Ok(Json(count))
 }
@@ -666,18 +687,45 @@ async fn revoke_manga_chapter(
 struct MarkChapterAsReadBody {
     state: Option<bool>,
 }
+
 async fn mark_chapter_as_read(
-    StateExtractor(State { database, .. }): StateExtractor<State>,
+    StateExtractor(State {
+        database,
+        track_state,
+        ..
+    }): StateExtractor<State>,
     SourceExtractor(_source): SourceExtractor,
     Path(params): Path<DownloadMangaChapterParams>,
     Json(MarkChapterAsReadBody { state }): Json<MarkChapterAsReadBody>,
 ) -> Result<Json<()>, AppError> {
+    let source_id = params.source_id.clone();
+    let manga_id_str = params.manga_id.clone();
     let chapter_id = ChapterId::from(params);
+    let is_marking_read = state.unwrap_or(true);
 
     usecases::mark_chapter_as_read(&database, &chapter_id, state).await?;
 
+    // Fire-and-forget tracker sync when marking as read.
+    if is_marking_read {
+        let db = database.clone();
+        let http = track_state.http_client.clone();
+        tokio::spawn(async move {
+            if let Err(e) = crate::track::sync::sync_tracker_progress(
+                &db,
+                &http,
+                &source_id,
+                &manga_id_str,
+            )
+            .await
+            {
+                log::warn!("tracker sync failed: {e}");
+            }
+        });
+    }
+
     Ok(Json(()))
 }
+
 
 async fn update_last_read(
     StateExtractor(State { database, .. }): StateExtractor<State>,

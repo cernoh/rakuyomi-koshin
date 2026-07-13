@@ -21,6 +21,7 @@ pub(crate) fn setcap_hint() -> String {
     )
 }
 
+#[derive(Debug)]
 pub enum AppError {
     SourceNotFound,
     NotFound,
