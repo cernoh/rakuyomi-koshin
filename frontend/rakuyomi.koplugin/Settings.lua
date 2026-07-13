@@ -1,9 +1,11 @@
 local Blitbuffer = require("ffi/blitbuffer")
+local Button = require("ui/widget/button")
 local FocusManager = require("ui/widget/focusmanager")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
+local LeftContainer = require("ui/widget/container/leftcontainer")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local Screen = require("device").screen
 local Size = require("ui/size")
@@ -12,6 +14,7 @@ local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local InfoMessage = require("ui/widget/infomessage")
 local _ = require("gettext+")
+local T = require("ffi/util").template
 local Paths = require("Paths")
 local Device = require("device")
 local Font = require("ui/font")
@@ -63,6 +66,7 @@ end
 -- REFACT This is duplicated from `SourceSettings` (pretty much all of it actually)
 local Settings = FocusManager:extend {
   settings = {},
+  tracker_services = nil,
   on_return_callback = nil,
   paths = { 0 }
 }
@@ -438,6 +442,48 @@ function Settings:init()
     end
   end
 
+  -- Tracking section: show each tracker service with login/logout.
+  if self.tracker_services then
+    table.insert(vertical_group, TextWidget:new {
+      text = _("Tracking"),
+      face = Font:getFace("cfont"),
+      bold = true,
+    })
+
+    for _, svc in ipairs(self.tracker_services) do
+      local tracker_name = svc.tracker == "anilist" and "AniList" or "MyAnimeList"
+      local status_text = svc.logged_in and _("Logged in") or _("Not logged in")
+
+      local row = HorizontalGroup:new{}
+      table.insert(row, TextWidget:new{
+        text = tracker_name .. " — " .. status_text,
+        face = Font:getFace("cfont", 18),
+      })
+      table.insert(row, HorizontalSpan:new{ width = Size.padding.large })
+
+      if svc.logged_in then
+        table.insert(row, Button:new{
+          text = _("Log out"),
+          callback = function()
+            self:_logoutTracker(svc.tracker)
+          end,
+        })
+      else
+        table.insert(row, Button:new{
+          text = _("Log in"),
+          callback = function()
+            self:_loginTracker(svc.tracker)
+          end,
+        })
+      end
+
+      table.insert(vertical_group, LeftContainer:new{
+        dimen = Geom:new{ w = self.item_width, h = Size.item.height_default },
+        row,
+      })
+    end
+  end
+
   self.title_bar = TitleBar:new {
     title = _("Settings"),
     fullscreen = true,
@@ -549,6 +595,106 @@ function Settings:updateSetting(key, value)
   end
 end
 
+--- @private
+function Settings:_loginTracker(tracker)
+  local loading = require("LoadingDialog"):new{message = _("Getting auth URL...")}
+  loading:show()
+
+  local resp = Backend.getTrackerAuthUrl(tracker)
+  UIManager:close(loading)
+
+  if resp.type == "ERROR" then
+    ErrorDialog:show(resp.message)
+    return
+  end
+
+  local auth_url = resp.body.url
+  local tracker_name = tracker == "anilist" and "AniList" or "MyAnimeList"
+  local input_hint = tracker == "anilist" and _("Paste access token") or _("Paste authorization code")
+
+  local input_dialog
+  input_dialog = require("ui/widget/inputdialog"):new{
+    title = T(_("Log in to %1"), tracker_name),
+    input_hint = input_hint,
+    description = T(_("Open this URL in a browser, authorize, then paste the token or code:\n\n%1"), auth_url),
+    input_type = "string",
+    buttons = {
+      {
+        {
+          text = _("Cancel"),
+          callback = function()
+            UIManager:close(input_dialog)
+          end,
+        },
+        {
+          text = _("Log in"),
+          is_enter_default = true,
+          callback = function()
+            local token = input_dialog:getInputText()
+            if token == "" then
+              return
+            end
+            UIManager:close(input_dialog)
+
+            local submit_loading = require("LoadingDialog"):new{message = _("Logging in...")}
+            submit_loading:show()
+
+            local body = {}
+            if tracker == "anilist" then
+              body.token = token
+            else
+              body.code = token
+              body.state = resp.body.qr_id
+            end
+
+            local submit_resp = Backend.submitTrackerAuth(tracker, body)
+            UIManager:close(submit_loading)
+
+            if submit_resp.type == "ERROR" then
+              ErrorDialog:show(submit_resp.message)
+            else
+              UIManager:show(InfoMessage:new{
+                text = _("Logged in successfully"),
+                timeout = 2,
+              })
+              -- Refresh the settings page.
+              UIManager:close(self)
+              Settings:fetchAndShow(self.on_return_callback)
+            end
+          end,
+        },
+      },
+    },
+  }
+  UIManager:show(input_dialog)
+  input_dialog:onShowKeyboard()
+end
+
+--- @private
+function Settings:_logoutTracker(tracker)
+  local confirm = require("ui/widget/confirmbox")
+  local tracker_name = tracker == "anilist" and "AniList" or "MyAnimeList"
+  UIManager:show(confirm:new{
+    text = T(_("Log out of %1?"), tracker_name),
+    ok_text = _("Log out"),
+    ok_callback = function()
+      local resp = Backend.clearTrackerAuth(tracker)
+      if resp.type == "ERROR" then
+        ErrorDialog:show(resp.message)
+      else
+        UIManager:show(InfoMessage:new{
+          text = _("Logged out successfully"),
+          timeout = 2,
+        })
+        -- Refresh the settings page.
+        UIManager:close(self)
+        Settings:fetchAndShow(self.on_return_callback)
+      end
+    end,
+  })
+end
+
+
 function Settings:fetchAndShow(on_return_callback)
   local response = Backend.getSettings()
   if response.type == 'ERROR' then
@@ -556,12 +702,21 @@ function Settings:fetchAndShow(on_return_callback)
     return
   end
 
+  -- Fetch tracker services status for the tracking section.
+  local tracker_services = nil
+  local services_resp = Backend.getTrackerServices()
+  if services_resp.type == "SUCCESS" then
+    tracker_services = services_resp.body
+  end
+
   local ui = Settings:new {
     settings = response.body,
+    tracker_services = tracker_services,
     on_return_callback = on_return_callback
   }
   ui.on_return_callback = on_return_callback
   UIManager:show(ui)
 end
+
 
 return Settings

@@ -1077,6 +1077,16 @@ function Backend.pullTrackerSync()
   })
 end
 
+--- @param tracker string
+--- @return SuccessfulResponse<nil>|ErrorResponse
+function Backend.clearTrackerAuth(tracker)
+  return Backend.requestJson({
+    path = "/track/" .. tracker .. "/auth",
+    method = "DELETE",
+  })
+end
+
+
 -- we can't really rely upon Koreader informing us it has terminated because
 -- the plugin lifecycle is really obscure, so use the garbage collector to
 -- detect we're done and cleanup
