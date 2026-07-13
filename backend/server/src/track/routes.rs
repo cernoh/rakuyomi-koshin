@@ -64,6 +64,8 @@ struct ServiceStatus {
 struct AuthUrlResponse {
     url: String,
     qr_id: String,
+    /// Base64-encoded PNG of the QR code for the auth URL.
+    qr_image_base64: String,
 }
 
 #[derive(Deserialize)]
@@ -119,10 +121,22 @@ async fn generate_auth_url(
     let tracker_id = parse_tracker(&tracker)?;
     let (url, state) = match tracker_id {
         TrackerService::AniList => {
-            // Implicit grant — no session to track; the returned
-            // `state` and `code_verifier` are both empty.
+            // Implicit grant — no PKCE verifier needed, but we still
+            // store the session so the QR endpoint can render the URL.
             let (url, _state, _verifier) = AniListAuth::new().generate_auth_url().await?;
-            (url, String::new())
+            let qr_id = uuid::Uuid::new_v4().to_string();
+            track_state
+                .insert(
+                    qr_id.clone(),
+                    crate::track::state::PkceSession {
+                        code_verifier: String::new(),
+                        tracker_id: tracker_id.as_str().to_string(),
+                        auth_url: url.as_str().to_string(),
+                        created_at: std::time::Instant::now(),
+                    },
+                )
+                .await;
+            (url, qr_id)
         }
         TrackerService::MyAnimeList => {
             let (url, state, verifier) = MalAuth::new().generate_auth_url().await?;
@@ -143,9 +157,15 @@ async fn generate_auth_url(
         }
     };
 
+    // Generate QR code as base64-encoded PNG
+    let qr_png = encode_url_to_qr_png(url.as_str())?;
+    use base64::{Engine as _, engine::general_purpose::STANDARD};
+    let qr_image_base64 = STANDARD.encode(&qr_png);
+
     Ok(Json(AuthUrlResponse {
         url: url.as_str().to_string(),
         qr_id: state,
+        qr_image_base64,
     }))
 }
 

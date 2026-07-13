@@ -1,26 +1,25 @@
 local Blitbuffer = require("ffi/blitbuffer")
 local Button = require("ui/widget/button")
+local ButtonTable = require("ui/widget/buttontable")
+local CenterContainer = require("ui/widget/container/centercontainer")
+local DataStorage = require("datastorage")
 local FocusManager = require("ui/widget/focusmanager")
 local FrameContainer = require("ui/widget/container/framecontainer")
+local Font = require("ui/font")
 local Geom = require("ui/geometry")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
+local ImageWidget = require("ui/widget/imagewidget")
+local InputText = require("ui/widget/inputtext")
 local LeftContainer = require("ui/widget/container/leftcontainer")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local Screen = require("device").screen
 local Size = require("ui/size")
 local TitleBar = require("ui/widget/titlebar")
 local UIManager = require("ui/uimanager")
-local VerticalGroup = require("ui/widget/verticalgroup")
-local InfoMessage = require("ui/widget/infomessage")
-local _ = require("gettext+")
-local T = require("ffi/util").template
-local Paths = require("Paths")
-local Device = require("device")
-local Font = require("ui/font")
 local TextWidget = require("ui/widget/textwidget")
-local ScrollableContainer = require("ui/widget/container/scrollablecontainer")
-local MovableContainer = require("ui/widget/container/movablecontainer")
+local VerticalSpan = require("ui/widget/verticalspan")
+local InfoMessage = require("ui/widget/infomessage")
 
 local Backend = require("Backend")
 local ErrorDialog = require("ErrorDialog")
@@ -595,6 +594,28 @@ function Settings:updateSetting(key, value)
   end
 end
 
+-- Decode base64 string to binary (pure Lua, no external deps).
+
+local function decode_base64(data)
+  local b64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+  data = data:gsub("[^" .. b64 .. "=]", "")
+  return (data:gsub(".", function(x)
+    if x == "=" then return "" end
+    local r, f = "", (b64:find(x) - 1)
+    for i = 6, 1, -1 do
+      r = r .. (f % 2 ^ i - f % 2 ^ (i - 1) > 0 and "1" or "0")
+    end
+    return r
+  end):gsub("%d%d%d?%d?%d?%d?%d?%d?", function(x)
+    if #x ~= 8 then return "" end
+    local c = 0
+    for i = 1, 8 do
+      c = c + (x:sub(i, i) == "1" and 2 ^ (8 - i) or 0)
+    end
+    return string.char(c)
+  end))
+end
+
 --- @private
 function Settings:_loginTracker(tracker)
   local loading = require("LoadingDialog"):simple(_("Getting auth URL..."))
@@ -607,65 +628,123 @@ function Settings:_loginTracker(tracker)
     return
   end
 
-  local auth_url = resp.body.url
   local tracker_name = tracker == "anilist" and "AniList" or "MyAnimeList"
   local input_hint = tracker == "anilist" and _("Paste access token") or _("Paste authorization code")
 
-  local input_dialog
-  input_dialog = require("ui/widget/inputdialog"):new{
-    title = T(_("Log in to %1"), tracker_name),
-    input_hint = input_hint,
-    description = T(_("Open this URL in a browser, authorize, then paste the token or code:\n\n%1"), auth_url),
+  -- Write QR PNG to temp file
+  local qr_file = DataStorage:getCacheDir() .. "/rakuyomi_qr.png"
+  local qr_data = decode_base64(resp.body.qr_image_base64)
+  local f = io.open(qr_file, "wb")
+  if f then
+    f:write(qr_data)
+    f:close()
+  end
+
+  -- Build custom dialog with QR image + input field
+  local title_w = TextWidget:new{
+    text = T(_("Log in to %1"), tracker_name),
+    face = Font:getFace("x_smallinfofont"),
+    bold = true,
+  }
+
+  local hint_w = TextWidget:new{
+    text = _("Scan QR with your phone, then paste the token below"),
+    face = Font:getFace("smallffont"),
+  }
+
+  local qr_image = ImageWidget:new{
+    file = qr_file,
+    width = 250,
+    height = 250,
+  }
+
+  local input = InputText:new{
+    hint = input_hint,
+    face = Font:getFace("smallinfofont"),
+    width = 400,
     input_type = "string",
-    buttons = {
+  }
+
+  local dialog
+
+  local buttons = {
+    {
       {
-        {
-          text = _("Cancel"),
-          callback = function()
-            UIManager:close(input_dialog)
-          end,
-        },
-        {
-          text = _("Log in"),
-          is_enter_default = true,
-          callback = function()
-            local token = input_dialog:getInputText()
-            if token == "" then
-              return
-            end
-            UIManager:close(input_dialog)
+        text = _("Cancel"),
+        callback = function()
+          UIManager:close(dialog)
+        end,
+      },
+      {
+        text = _("Log in"),
+        callback = function()
+          local token = input:getInputText()
+          if token == "" then
+            return
+          end
+          UIManager:close(dialog)
 
-            local submit_loading = require("LoadingDialog"):simple(_("Logging in..."))
+          local submit_loading = require("LoadingDialog"):simple(_("Logging in..."))
 
-            local body = {}
-            if tracker == "anilist" then
-              body.token = token
-            else
-              body.code = token
-              body.state = resp.body.qr_id
-            end
+          local body = {}
+          if tracker == "anilist" then
+            body.token = token
+          else
+            body.code = token
+            body.state = resp.body.qr_id
+          end
 
-            local submit_resp = Backend.submitTrackerAuth(tracker, body)
-            UIManager:close(submit_loading)
+          local submit_resp = Backend.submitTrackerAuth(tracker, body)
+          UIManager:close(submit_loading)
 
-            if submit_resp.type == "ERROR" then
-              ErrorDialog:show(submit_resp.message)
-            else
-              UIManager:show(InfoMessage:new{
-                text = _("Logged in successfully"),
-                timeout = 2,
-              })
-              -- Refresh the settings page.
-              UIManager:close(self)
-              Settings:fetchAndShow(self.on_return_callback)
-            end
-          end,
-        },
+          if submit_resp.type == "ERROR" then
+            ErrorDialog:show(submit_resp.message)
+          else
+            UIManager:show(InfoMessage:new{
+              text = _("Logged in successfully"),
+              timeout = 2,
+            })
+            -- Refresh the settings page.
+            UIManager:close(self)
+            Settings:fetchAndShow(self.on_return_callback)
+          end
+        end,
       },
     },
   }
-  UIManager:show(input_dialog)
-  input_dialog:onShowKeyboard()
+
+  local button_table = ButtonTable:new{
+    buttons = buttons,
+    width = 450,
+  }
+
+  local content = VerticalGroup:new{
+    align = "center",
+    title_w,
+    VerticalSpan:new{ width = 10 },
+    hint_w,
+    VerticalSpan:new{ width = 10 },
+    qr_image,
+    VerticalSpan:new{ width = 10 },
+    input,
+    VerticalSpan:new{ width = 10 },
+    button_table,
+  }
+
+  local frame = FrameContainer:new{
+    background = Blitbuffer.COLOR_WHITE,
+    bordersize = 2,
+    padding = 10,
+    content,
+  }
+
+  dialog = CenterContainer:new{
+    dimen = Screen:getSize(),
+    frame,
+  }
+
+  UIManager:show(dialog)
+  input:onShowKeyboard()
 end
 
 --- @private
