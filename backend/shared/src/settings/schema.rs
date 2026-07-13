@@ -135,6 +135,18 @@ pub struct Settings {
     /// Size of the RAM storage in MB.
     #[serde(default = "default_ram_storage_size_mb")]
     pub ram_storage_size_mb: usize,
+
+    /// Whether to auto-sync progress to AniList when chapters are marked read.
+    #[serde(default = "default_true")]
+    pub track_anilist_enabled: bool,
+
+    /// Whether to auto-sync progress to MyAnimeList when chapters are marked read.
+    #[serde(default = "default_true")]
+    pub track_mal_enabled: bool,
+
+    /// Whether to automatically push progress on chapter read (fire-and-forget).
+    #[serde(default = "default_true")]
+    pub track_auto_sync: bool,
 }
 
 fn default_ram_storage_size_mb() -> usize {
@@ -148,9 +160,12 @@ fn default_storage_size_limit() -> StorageSizeLimit {
 fn is_default_storage_size_limit(size: &StorageSizeLimit) -> bool {
     *size == default_storage_size_limit()
 }
-
 fn default_false() -> bool {
     false
+}
+
+fn default_true() -> bool {
+    true
 }
 
 impl Default for StorageSizeLimit {

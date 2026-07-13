@@ -29,6 +29,7 @@ local Menu = require("widgets/Menu")
 local ErrorDialog = require("ErrorDialog")
 local MangaReader = require("MangaReader")
 local MangaInfoWidget = require("MangaInfoWidget")
+local TrackingMenu = require("TrackingMenu")
 local CheckboxDialog = require("CheckboxDialog")
 local Testing = require("testing")
 local calcLastReadText = require("utils/calcLastReadText")
@@ -1093,7 +1094,21 @@ function ChapterListing:openMenu()
           self:onDownloadUnreadChapters()
         end
       }
-    }
+    },
+    {
+      {
+        text = Icons.SYNC .. " " .. _("Tracking"),
+        callback = function()
+          UIManager:close(dialog)
+          local title = self.manga.title or ""
+          TrackingMenu:new{
+            source_id = self.manga.source.id,
+            manga_id = self.manga.id,
+            manga_title = title,
+          }:show()
+        end
+      }
+    },
   }
 
   if #self.langs >= 2 then

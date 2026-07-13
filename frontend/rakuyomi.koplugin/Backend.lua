@@ -946,6 +946,137 @@ function Backend.removeMangaFromPlaylist(playlist_id, source_id, manga_id)
   })
 end
 
+-- Tracker API methods
+
+--- @class TrackerServiceStatus
+--- @field tracker string
+--- @field logged_in boolean
+
+--- @class TrackerMangaSearchResult
+--- @field remote_id string
+--- @field title string
+--- @field total_chapters number|nil
+--- @field cover_url string|nil
+--- @field description string|nil
+
+--- @class TrackEntry
+--- @field manga_source_id string
+--- @field manga_id string
+--- @field tracker_id string
+--- @field remote_id string|nil
+--- @field library_id string|nil
+--- @field title string|nil
+--- @field last_chapter_read number
+--- @field total_chapters number|nil
+--- @field status string|nil
+--- @field score number|nil
+--- @field start_date string|nil
+--- @field finish_date string|nil
+--- @field tracking_url string|nil
+--- @field private boolean
+--- @field updated_at string
+
+--- @return SuccessfulResponse<TrackerServiceStatus[]>|ErrorResponse
+function Backend.getTrackerServices()
+  return Backend.requestJson({
+    path = "/track/services",
+  })
+end
+
+--- @return SuccessfulResponse<table>|ErrorResponse
+function Backend.getTrackerStatus(tracker)
+  return Backend.requestJson({
+    path = "/track/" .. tracker .. "/status",
+  })
+end
+
+--- @return SuccessfulResponse<table>|ErrorResponse
+function Backend.getTrackerAuthUrl(tracker)
+  return Backend.requestJson({
+    path = "/track/" .. tracker .. "/auth-url",
+    method = "POST",
+  })
+end
+
+--- @return SuccessfulResponse<table>|ErrorResponse
+function Backend.submitTrackerAuth(tracker, body)
+  return Backend.requestJson({
+    path = "/track/" .. tracker .. "/auth",
+    method = "POST",
+    body = body,
+  })
+end
+
+--- @param tracker string "anilist" or "myanimelist"
+--- @param query string
+--- @return SuccessfulResponse<TrackerMangaSearchResult[]>|ErrorResponse
+function Backend.searchTrackerManga(tracker, query)
+  return Backend.requestJson({
+    path = "/track/" .. tracker .. "/search",
+    method = "POST",
+    body = { query = query },
+  })
+end
+
+--- @param tracker string
+--- @param manga_source_id string
+--- @param manga_id string
+--- @param remote_id string
+--- @param title string|nil
+--- @param total_chapters number|nil
+--- @return SuccessfulResponse<TrackEntry>|ErrorResponse
+function Backend.linkMangaToTracker(tracker, manga_source_id, manga_id, remote_id, title, total_chapters)
+  return Backend.requestJson({
+    path = "/track/" .. tracker .. "/link",
+    method = "POST",
+    body = {
+      manga_source_id = manga_source_id,
+      manga_id = manga_id,
+      remote_id = remote_id,
+      title = title,
+      total_chapters = total_chapters,
+    },
+  })
+end
+
+--- @param tracker string
+--- @param manga_source_id string
+--- @param manga_id string
+--- @return SuccessfulResponse<nil>|ErrorResponse
+function Backend.unlinkMangaFromTracker(tracker, manga_source_id, manga_id)
+  return Backend.requestJson({
+    path = "/track/" .. tracker .. "/unlink",
+    method = "DELETE",
+    body = {
+      manga_source_id = manga_source_id,
+      manga_id = manga_id,
+    },
+  })
+end
+
+--- @param tracker string
+--- @return SuccessfulResponse<TrackEntry[]>|ErrorResponse
+function Backend.getTrackerEntries(tracker)
+  return Backend.requestJson({
+    path = "/track/" .. tracker .. "/entries",
+  })
+end
+
+--- @return SuccessfulResponse<table[]>|ErrorResponse
+function Backend.getSyncQueue()
+  return Backend.requestJson({
+    path = "/track/sync-queue",
+  })
+end
+
+--- @return SuccessfulResponse<string[]>|ErrorResponse
+function Backend.pullTrackerSync()
+  return Backend.requestJson({
+    path = "/track/pull-sync",
+    method = "POST",
+  })
+end
+
 -- we can't really rely upon Koreader informing us it has terminated because
 -- the plugin lifecycle is really obscure, so use the garbage collector to
 -- detect we're done and cleanup

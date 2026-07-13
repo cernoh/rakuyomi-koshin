@@ -4396,6 +4396,7 @@ dependencies = [
  "aidoku",
  "anyhow",
  "async-stream",
+ "async-trait",
  "base64",
  "boa_engine",
  "chrono",
