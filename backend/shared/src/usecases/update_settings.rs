@@ -41,6 +41,12 @@ pub struct UpdateableSettings {
     search_view_mode: SearchViewMode,
     ram_storage_enabled: bool, // readonly not allow UpdateableSettings update value
     ram_storage_size_mb: usize, // readonly not allow UpdateableSettings update value
+    #[serde(default)]
+    track_anilist_enabled: bool,
+    #[serde(default)]
+    track_mal_enabled: bool,
+    #[serde(default = "crate::settings::default_true")]
+    track_auto_sync: bool,
 }
 
 impl UpdateableSettings {
@@ -58,6 +64,9 @@ impl UpdateableSettings {
         settings.optimize_image = self.optimize_image;
         settings.library_view_mode = self.library_view_mode;
         settings.search_view_mode = self.search_view_mode;
+        settings.track_anilist_enabled = self.track_anilist_enabled;
+        settings.track_mal_enabled = self.track_mal_enabled;
+        settings.track_auto_sync = self.track_auto_sync;
     }
 }
 
@@ -80,6 +89,9 @@ impl From<&Settings> for UpdateableSettings {
             search_view_mode: value.search_view_mode,
             ram_storage_enabled: value.ram_storage_enabled,
             ram_storage_size_mb: value.ram_storage_size_mb,
+            track_anilist_enabled: value.track_anilist_enabled,
+            track_mal_enabled: value.track_mal_enabled,
+            track_auto_sync: value.track_auto_sync,
         }
     }
 }
