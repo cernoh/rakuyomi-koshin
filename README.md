@@ -73,9 +73,9 @@ This fork:
 
 ## Installation & Usage
 
-For detailed installation and usage instructions, please check out the [Installation](https://tachibana-shin.github.io/rakuyomi/user-guide/installation/README.html) and [Quickstart](https://tachibana-shin.github.io/rakuyomi/user-guide/quickstart) sections on our user guide!
+For detailed installation and usage instructions, please check out the [Installation](https://cernoh.github.io/rakuyomi-koshin/user-guide/installation/README.html) and [Quickstart](https://cernoh.github.io/rakuyomi-koshin/user-guide/quickstart) sections on our user guide!
 
 ## Contributing
 
-For information on how to contribute to rakuyomi, please check out the [Setting up the Environment](https://tachibana-shin.github.io/rakuyomi/contributing/setting-up-the-environment.html) section on our guide!
+For information on how to contribute to rakuyomi, please check out the [Setting up the Environment](https://cernoh.github.io/rakuyomi-koshin/contributing/setting-up-the-environment.html) section on our guide!
 
