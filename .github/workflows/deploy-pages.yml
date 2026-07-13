@@ -36,7 +36,7 @@ jobs:
           key: ${{ runner.os }}-cargo-docs
  
       - name: Setup mdbook-admonish, mdbook
-        run: cargo install mdbook mdbook-admonish
+        run: cargo install mdbook@0.4.40 mdbook-admonish
       
       - name: Build mdBook
         run: |

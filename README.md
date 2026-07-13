@@ -1,5 +1,7 @@
 # rakuyomi
 
+> **Fork Notice:** This is a fork of [tachibana-shin/rakuyomi](https://github.com/tachibana-shin/rakuyomi), which itself continues the original work by [@hanatsumi](https://github.com/hanatsumi).
+
 **rakuyomi** is a manga reader plugin for [KOReader](https://github.com/koreader/koreader).
 
 > [!IMPORTANT]
@@ -36,6 +38,7 @@ This fork:
 - Improved SQLite query method to speed up all operations by `200 times` including: library access, search, chapter list (`x300 times`)
 - Details manga
 - Aidoku source new SDK (0.7) support
+- AniList and MyAnimeList tracking integration
 
 <table>
   <tr>
