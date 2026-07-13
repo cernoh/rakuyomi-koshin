@@ -291,6 +291,7 @@
           (name: target: mkPluginFolderWithServer { buildName = name; target = target; })
           buildTargets
         );
+
       in {
         packages.koreader = koreader;
         packages.rakuyomi = builds // {
@@ -401,6 +402,16 @@
 
             echo "RakuYomi devShell activated."
           '';
+        };
+      } // {
+        # `nix run .#` / `nix run .#start` — builds server locally and launches KOReader with rakuyomi
+        apps.default = {
+          type = "app";
+          program = "${rakuyomiDev}/bin/dev";
+        };
+        apps.start = {
+          type = "app";
+          program = "${rakuyomiDev}/bin/dev";
         };
       }
     );
