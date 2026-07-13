@@ -450,7 +450,7 @@ function Settings:init()
       bold = true,
     })
 
-    for _, svc in ipairs(self.tracker_services) do
+    for _i, svc in ipairs(self.tracker_services) do
       local tracker_name = svc.tracker == "anilist" and "AniList" or "MyAnimeList"
       local status_text = svc.logged_in and _("Logged in") or _("Not logged in")
 
