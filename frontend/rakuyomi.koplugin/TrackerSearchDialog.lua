@@ -77,8 +77,7 @@ function TrackerSearchDialog:show()
 end
 
 function TrackerSearchDialog:_doSearch(query, width)
-  local loading = LoadingDialog:new{message = _("Searching...")}
-  loading:show()
+  local loading = LoadingDialog:simple(_("Searching..."))
 
   local resp = Backend.searchTrackerManga(self.tracker, query)
   UIManager:close(loading)
@@ -174,8 +173,7 @@ function TrackerSearchDialog:_showResults(results, width)
 end
 
 function TrackerSearchDialog:_linkResult(result)
-  local loading = LoadingDialog:new{message = _("Linking...")}
-  loading:show()
+  local loading = LoadingDialog:simple(_("Linking..."))
 
   local resp = Backend.linkMangaToTracker(
     self.tracker,

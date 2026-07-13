@@ -250,8 +250,7 @@ function TrackingMenu:_unlinkTracker(tracker)
 end
 
 function TrackingMenu:_pullSync()
-  local loading = LoadingDialog:new{message = _("Syncing with trackers...")}
-  loading:show()
+  local loading = LoadingDialog:simple(_("Syncing with trackers..."))
 
   local resp = Backend.pullTrackerSync()
   UIManager:close(loading)

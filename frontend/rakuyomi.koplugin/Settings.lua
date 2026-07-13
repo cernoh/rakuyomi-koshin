@@ -597,8 +597,7 @@ end
 
 --- @private
 function Settings:_loginTracker(tracker)
-  local loading = require("LoadingDialog"):new{message = _("Getting auth URL...")}
-  loading:show()
+  local loading = require("LoadingDialog"):simple(_("Getting auth URL..."))
 
   local resp = Backend.getTrackerAuthUrl(tracker)
   UIManager:close(loading)
@@ -636,8 +635,7 @@ function Settings:_loginTracker(tracker)
             end
             UIManager:close(input_dialog)
 
-            local submit_loading = require("LoadingDialog"):new{message = _("Logging in...")}
-            submit_loading:show()
+            local submit_loading = require("LoadingDialog"):simple(_("Logging in..."))
 
             local body = {}
             if tracker == "anilist" then
