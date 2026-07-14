@@ -4,13 +4,6 @@
 
 **rakuyomi** is a manga reader plugin for [KOReader](https://github.com/koreader/koreader).
 
-> [!IMPORTANT]
->
-> The original author of the [@hanatsumi](https://github.com/hanatsumi) project no longer uses the e-link reader, so I am authorized to maintain this branch as the official branch.
->
-> Thank [@hanatsumi](https://github.com/hanatsumi) for the great work!!
-> 
-> `rakuyomi` currently supports all [Aidoku](https://github.com/Aidoku) sources including sources written with legacy SDK or next SDK ([Aidoku Community Sources](https://github.com/Aidoku-Community/sources), [Tachibana Shin Sources](https://github.com/tachibana-shin/aidoku-community-sources)...)
 
 ## Android Support
 
@@ -38,6 +31,8 @@ This fork:
 - Improved SQLite query method to speed up all operations by `200 times` including: library access, search, chapter list (`x300 times`)
 - Details manga
 - Aidoku source new SDK (0.7) support
+
+added in Koshin:
 - AniList and MyAnimeList tracking integration
 
 <table>
